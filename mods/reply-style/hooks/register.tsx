@@ -4,24 +4,32 @@ import { FEATURES, parse, USAGE } from './command'
 import type { Feature } from './command'
 import { mayHold, segment } from './segment'
 import type { Item, Segment } from './segment'
-import { boxedRows, layout } from './table'
+import { boxedRows, layout, spans } from './table'
 import type { Line } from './table'
 
-// glow-style.json: inline code 203 on 236, list items `• `, indented 2.
+// glow-style.json: inline code 203 on 236, list items `• `, indented 2;
+// headings bold 39, h1 232 on 39 with a space each side, h2 `█ ` over a
+// 75-column rule, h3 `▌ `, h4 `│ ` and not bold.
 const CODE_FG = '#ff5f5f'
 const CODE_BG = '#303030'
+const HEAD_FG = '#00afff'
+const H1_FG = '#080808'
 const ITEM = '• '
 const BULLET = 2
+const H2_RULE = 75
+const PREFIX: Record<number, string> = { 1: ' ', 2: '█ ', 3: '▌ ', 4: '│ ' }
 
 export const register: Register = on => {
   // Switches and measurements for this load; a reload starts them over.
-  const isOn: Record<Feature, boolean> = { tables: true, bullets: true }
+  const isOn: Record<Feature, boolean> = { tables: true, bullets: true, headings: true, rules: true }
   let calls = 0
   let drawn = 0
   let tables = 0
   let rowsMine = 0
   let rowsBoxed = 0
   let lists = 0
+  let headings = 0
+  let rules = 0
   let totalMs = 0
   let maxMs = 0
 
@@ -38,7 +46,7 @@ export const register: Register = on => {
     const cmd = parse(e.args)
     if (cmd.kind === 'usage') return { text: USAGE }
     if (cmd.kind === 'reset') {
-      calls = drawn = tables = rowsMine = rowsBoxed = lists = totalMs = maxMs = 0
+      calls = drawn = tables = rowsMine = rowsBoxed = lists = headings = rules = totalMs = maxMs = 0
 
       return { text: 'Reply style: stats reset.' }
     }
@@ -55,7 +63,7 @@ export const register: Register = on => {
       text: [
         `Reply style: ${FEATURES.map(f => `${f} ${isOn[f] ? 'on' : 'off'}`).join(', ')}`,
         `- Message renders seen: ${calls}; drawn by the mod: ${drawn}`,
-        `- Tables drawn: ${tables}; bullet lists drawn: ${lists} (counted per render, so streaming counts repeats)`,
+        `- Drawn: ${tables} tables, ${lists} bullet lists, ${headings} headings, ${rules} rules (counted per render, so streaming counts repeats)`,
         `- Table rows: ${rowsMine} compact vs about ${rowsBoxed} boxed, ${saved} saved`,
         `- Hook time per drawn render: avg ${avg} ms, max ${maxMs} ms`,
       ].join('\n'),
@@ -89,14 +97,38 @@ export const register: Register = on => {
       </Text>
     )
 
-    // A blank line between two parts where the reply has one, and always
-    // around a table, as before bullets were drawn.
+    // A blank line between two parts where the reply has one, always above
+    // a heading, and always around a table, as before bullets were drawn.
     const gapAbove = (all: Segment[], i: number) => {
       const p = all[i]
       const prev = all[i - 1]
       if (!p || !prev) return 0
 
-      return p.blankBefore || p.kind === 'table' || prev.kind === 'table' ? 1 : 0
+      return p.blankBefore || p.kind === 'heading' || p.kind === 'table' || prev.kind === 'table' ? 1 : 0
+    }
+
+    // A heading's text, with inline code kept red on grey.
+    const headingText = (level: number, text: string) => {
+      const h1 = level === 1
+      const parts = spans(text).map((s, i) =>
+        s.style === 'code' ? (
+          <Text key={`s${i}`} color={CODE_FG} backgroundColor={CODE_BG}>{s.text}</Text>
+        ) : (
+          s.text
+        ),
+      )
+
+      return (
+        <Text
+          color={h1 ? H1_FG : HEAD_FG}
+          backgroundColor={h1 ? HEAD_FG : undefined}
+          bold={level !== 4}
+        >
+          {PREFIX[level] ?? ''}
+          {parts}
+          {h1 ? ' ' : ''}
+        </Text>
+      )
     }
 
     const item = (it: Item, i: number, columns: number) => (
@@ -120,6 +152,25 @@ export const register: Register = on => {
           return (
             <Box key={key} marginTop={top}>
               <Markdown text={p.text} />
+            </Box>
+          )
+        }
+        if (p.kind === 'heading') {
+          headings++
+
+          return (
+            <Box key={key} flexDirection="column" marginTop={top}>
+              {headingText(p.level, p.text)}
+              {p.level === 2 ? <Text color={HEAD_FG}>{'─'.repeat(Math.min(H2_RULE, columns))}</Text> : null}
+            </Box>
+          )
+        }
+        if (p.kind === 'rule') {
+          rules++
+
+          return (
+            <Box key={key} marginTop={top}>
+              <Text dimColor>{p.text}</Text>
             </Box>
           )
         }

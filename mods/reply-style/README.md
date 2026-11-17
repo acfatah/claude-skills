@@ -10,6 +10,10 @@ feature you can turn on or off on its own:
 - **Bullets:** unordered list items start with `•` instead of `-`, nested
   ones indented 2 columns per level, and wrapped lines line up under the
   item's text.
+- **Headings:** glow's look, bold blue (`39`): `#` reversed with a space
+  each side, `##` as `█ Title` over a 75-column rule, `###` as `▌ Title`,
+  and `####` as `│ Title`, not bold. Deeper levels are bold blue alone.
+- **Rules:** a `---`, `***` or `___` line is kept as written and drawn dim.
 
 Replies the mod has nothing to change in are left to the built-in renderer.
 
@@ -48,11 +52,27 @@ A list before, then after:
   • A nested point
 ```
 
+Headings, as Claude writes them, then as the mod draws them (the rule is
+75 columns, shortened here):
+
+```
+## Top level
+
+### Subsection
+```
+
+```
+█ Top level
+──────────────────────────────
+
+▌ Subsection
+```
+
 ## What it is
 
 - **A terminal display change.** It hooks the `AssistantMessage` render on
   the terminal surface only, and only for replies with a part it
-  changes: a table or a bullet list.
+  changes: a table, a bullet list, a heading or a rule.
 - **Display only.** The stored message and what the model sees are
   unchanged; the mod redraws the text it is given.
 - **Shorter tables.** Measured on one machine, a table takes about 25-33%
@@ -60,24 +80,26 @@ A list before, then after:
 - **Fast.** Measured on one machine, offline, across runs: a 3-row table
   took 0.02-0.06 ms to lay out, a 40-row table 0.23-0.62 ms, and a 30-item
   nested list 0.08-0.15 ms. Live in a session, a table render averaged
-  1.1 ms, with a 3 ms maximum; that was measured before bullets were
-  added.
+  1.1 ms, with a 3 ms maximum; that was measured before bullets, headings
+  and rules were added.
 - **Switchable.** `/reply-style tables off` hands tables back to the
   built-in renderer without unloading the mod; `/reply-style off` does it
   for every feature.
 
 ## What it is not
 
-- **Not a theme.** It changes only its features' parts; prose, headings,
-  ordered lists and code blocks go through Claude Code's own markdown
+- **Not a theme.** It changes only its features' parts; prose, ordered
+  lists, quotes and code blocks go through Claude Code's own markdown
   renderer.
+- **Not for setext headings.** A heading underlined with `===` or `---` is
+  left to the built-in renderer; only `#` headings are drawn.
 - **Not a list renderer for every list.** Bullets nested under an ordered
   (`1.`) item stay with that item, so the built-in renderer draws them with
   `-`.
 - **Not a markdown renderer for cells.** Only `**bold**` and `` `code` ``
   are styled inside a cell; everything else is shown as written.
 - **Not for other surfaces.** The desktop app, the web app and IDE
-  extensions keep their own tables and lists.
+  extensions keep their own tables, lists, headings and rules.
 
 ## When not to use
 
@@ -88,6 +110,8 @@ A list before, then after:
   mod shows `[text](url)` and `*text*` as raw markdown.
 - **You want boxed tables** → run `/reply-style tables off`.
 - **You want `-` bullets back** → run `/reply-style bullets off`.
+- **You want the built-in headings or rules** → run
+  `/reply-style headings off` or `/reply-style rules off`.
 
 **Negative example:** a reply that compares CJK place names with emoji
 status icons in a table will not line up with this mod; turn it off with
@@ -134,12 +158,12 @@ marketplace entry yet, so `/plugin install` does not find it.
 ### The `/reply-style` command
 
 - **`/reply-style`:** shows which features are on, and stats for this
-  load: message renders seen, renders drawn by the mod, tables and bullet
-  lists drawn, table rows compact against an estimate for boxed, and hook
-  time per drawn render (average and maximum).
-- **`/reply-style tables off`**, **`/reply-style bullets off`**, and `on`
-  for either: turn one feature off or on. New and redrawn replies follow
-  the switch.
+  load: message renders seen, renders drawn by the mod, tables, bullet
+  lists, headings and rules drawn, table rows compact against an estimate
+  for boxed, and hook time per drawn render (average and maximum).
+- **`/reply-style <feature> off`** and **`/reply-style <feature> on`:**
+  turn one feature off or on, where `<feature>` is `tables`, `bullets`,
+  `headings` or `rules`. New and redrawn replies follow the switch.
 - **`/reply-style off`** and **`/reply-style on`:** turn every feature off
   or on.
 - **`/reply-style reset`:** sets the stats back to zero.
@@ -153,6 +177,7 @@ marketplace entry yet, so `/plugin install` does not find it.
   saved and the render time.
 - **See bullets:** "List three tradeoffs of SQLite, with a nested example
   under each."
+- **See headings:** "Explain git rebase, with a section for each step."
 - **Switch:** `/reply-style tables off`, then ask for the same table again
   to compare with the built-in renderer; `/reply-style bullets off` does
   the same for lists.
@@ -171,10 +196,11 @@ bun mods/reply-style/bench/table.bench.ts
 - **`validate`** type-checks the hooks module. It warns that the mod has
   no icon; that is expected.
 - **`test`** runs three files. `hooks/register.test.tsx` checks that a
-  reply with a table or bullets is drawn by the mod, and that one with
-  neither is left to the built-in renderer. `hooks/segment.test.ts` checks
-  how a reply is split: nested and wrapped items, fences, rules, ordered
-  lists, and each switch. `hooks/command.test.ts` checks the command's
+  reply with a table, bullets, headings or a rule is drawn by the mod, and
+  that one with none of them is left to the built-in renderer.
+  `hooks/segment.test.ts` checks how a reply is split: nested and wrapped
+  items, heading levels, rules and setext headings, fences, ordered lists,
+  and each switch. `hooks/command.test.ts` checks the command's
   arguments.
 - **The benchmark** prints the time per render for a 3-row table, a 40-row
   table, a 30-item nested list and a reply with neither, then the rows
@@ -196,9 +222,16 @@ Gotchas:
 - **Its own bullet and gaps.** For a reply it draws, the mod draws the
   `●` bullet and the blank lines between parts itself, so spacing can
   differ a little from a reply the built-in renderer draws.
-- **A bug shows in most replies.** Bullets put most replies through the
-  mod, so a mistake in its list code shows nearly everywhere.
-  `/reply-style bullets off` is the way out until it is fixed.
+- **A bug shows in most replies.** Bullets and headings put most replies
+  through the mod, so a mistake in its code shows nearly everywhere.
+  Turning the feature off, such as `/reply-style bullets off`, is the way
+  out until it is fixed.
+- **A `---` right under text is a heading.** Markdown reads it as a setext
+  underline, so the line above becomes a heading. Put a blank line before
+  a rule.
+- **Heading text styles code only.** Inline code in a heading is red on
+  grey, and `**` markers are dropped, since the heading is bold already.
+  Italics and links in a heading show as raw markdown.
 - **Indents count spaces.** A tab counts as one column, so a list indented
   with tabs can nest differently from the built-in renderer.
 - **Loose items keep a blank line.** A blank line between two items stays

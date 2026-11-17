@@ -16,7 +16,7 @@ const big = 'Intro\n\n| Area | Pages | Notes |\n| --- | --- | --- |\n' + Array.f
 const plain = 'Just prose with no table at all. '.repeat(300)
 const item = (i: number) => `- **Point ${i}:** a bullet with \`code\` that runs long enough\n  to wrap onto a second line.\n  - Nested detail ${i}.`
 const bullets = 'Intro.\n\n' + Array.from({ length: 30 }, (_, i) => item(i)).join('\n') + '\n\nOutro.'
-const ALL = { tables: true, bullets: true }
+const ALL = { tables: true, bullets: true, headings: true, rules: true }
 // Segments a reply and lays out its tables, item bodies included, as a
 // render does.
 const render = (t: string, cols: number): void =>

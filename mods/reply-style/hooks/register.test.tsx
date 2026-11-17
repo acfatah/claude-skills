@@ -38,6 +38,26 @@ test('a reply without a table or a bullet is left to the engine', async $ => {
   await ui.unmount()
 })
 
+test('headings are drawn in the glow style, an h2 over a 75-column rule', async $ => {
+  const ui = await $.ui.mount(MSG('## Top\n\nText.\n\n### Sub\n\n#### Third'))
+
+  expect(await ui.find({ type: 'Text', text: '█ Top' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '─'.repeat(75) })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '▌ Sub' })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: '│ Third' })).toBeDefined()
+  expect(await ui.find({ text: /#/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('a rule is kept as written, dim', async $ => {
+  const ui = await $.ui.mount(MSG('Text.\n\n---\n### References'))
+
+  const rule = await ui.find({ type: 'Text', text: /^---$/ })
+  expect(rule?.props.dimColor).toBe(true)
+  expect(await ui.find({ type: 'Text', text: '▌ References' })).toBeDefined()
+  await ui.unmount()
+})
+
 test('bullets are drawn as •, nested ones too, with their text as markdown', async $ => {
   const ui = await $.ui.mount(MSG('Intro.\n\n- **One:** first\n  - inner\n- two'))
 

@@ -1,5 +1,5 @@
-// Splits a reply into the parts the mod draws (tables, bullet lists) and the
-// markdown between them, which the engine draws. No engine imports, so a
+// Splits a reply into the parts the mod draws (tables, bullet lists, headings,
+// rules) and the markdown between them, which the engine draws. No engine imports, so a
 // benchmark or a test can run it alone.
 
 import { splitRow } from './table'
@@ -14,14 +14,20 @@ export type Segment =
   | { kind: 'markdown'; text: string; blankBefore: boolean }
   | { kind: 'table'; table: Table; blankBefore: boolean }
   | { kind: 'list'; items: Item[]; blankBefore: boolean }
+  | { kind: 'heading'; level: number; text: string; blankBefore: boolean }
+  | { kind: 'rule'; text: string; blankBefore: boolean }
 
-export type Parts = { tables: boolean; bullets: boolean }
+export type Parts = { tables: boolean; bullets: boolean; headings: boolean; rules: boolean }
 
 const SEPARATOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/
 const FENCE = /^\s*(```|~~~)/
 const BULLET = /^( *)([-*+])( +)(.*)$/
 const ORDERED = /^( *)(\d{1,9}[.)])( +)/
 const RULE = /^ {0,3}([-*_])( *\1){2,} *$/
+// An ATX heading: `#` to `######`, a space, the text, optional closing `#`s.
+const HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/
+// A line of `-` alone: under paragraph text it makes a setext heading.
+const SETEXT = /^ {0,3}-+ *$/
 // Lines that start a block of their own, so they never continue an item.
 const BLOCK = /^ {0,3}(#{1,6}(\s|$)|>|```|~~~|\|)/
 
@@ -132,6 +138,28 @@ export const segment = (text: string, parts: Parts): Segment[] => {
       } else if (ordered >= 0 && indentOf(line) < ordered) {
         ordered = -1
       }
+      // Headings and rules inside an open ordered item stay with it.
+      const h = ordered < 0 ? HEADING.exec(line) : null
+      if (parts.headings && h) {
+        flush()
+        out.push({ kind: 'heading', level: (h[1] ?? '#').length, text: (h[2] ?? '').trim(), blankBefore: gap })
+        gap = false
+        continue
+      }
+      const underPara = buf.length > 0 && !isBlank(buf[buf.length - 1] ?? '')
+      if (ordered < 0 && RULE.test(line) && !(underPara && SETEXT.test(line))) {
+        if (parts.rules) {
+          flush()
+          out.push({ kind: 'rule', text: line.trim(), blankBefore: gap })
+          gap = false
+          continue
+        }
+        // A rule is never a bullet, even with the rules feature off.
+        if (bufGap === undefined) bufGap = gap
+        gap = false
+        buf.push(line)
+        continue
+      }
       const b = ordered < 0 ? bullet(line) : undefined
       if (parts.bullets && b && b.indent <= 3) {
         flush()
@@ -169,4 +197,7 @@ export const segment = (text: string, parts: Parts): Segment[] => {
 
 // Whether a reply may hold a part to draw: a cheap test before `segment`.
 export const mayHold = (text: string, parts: Parts) =>
-  (parts.tables && text.includes('|')) || (parts.bullets && /^ {0,3}[-*+] /m.test(text))
+  (parts.tables && text.includes('|')) ||
+  (parts.bullets && /^ {0,3}[-*+] /m.test(text)) ||
+  (parts.headings && /^ {0,3}#{1,6}([ \t]|$)/m.test(text)) ||
+  (parts.rules && /^ {0,3}([-*_])( *\1){2,} *$/m.test(text))

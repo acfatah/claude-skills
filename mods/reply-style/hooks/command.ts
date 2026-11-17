@@ -1,7 +1,7 @@
 // Parses the `/reply-style` arguments. No engine imports, so a test can run it
 // alone.
 
-export const FEATURES = ['tables', 'bullets'] as const
+export const FEATURES = ['tables', 'bullets', 'headings', 'rules'] as const
 export type Feature = (typeof FEATURES)[number]
 
 export type Command =
