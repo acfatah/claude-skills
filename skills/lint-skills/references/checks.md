@@ -30,10 +30,11 @@ N errors, M warnings
 - **Skills:** each `skills/<folder>/` that holds a `SKILL.md`. Folders
   without one are ignored.
 - **Workflows:** each folder under `workflows/`.
+- **Mods:** each folder under `mods/`. A repo without `mods/` has none.
 - **Scanned for references:** `skills/*/SKILL.md`, `skills/*/README.md`,
   `skills/*/references/**/*.md`, `workflows/*/README.md`,
-  `claude/CLAUDE.md`, and the root `README.md` and `CLAUDE.md`. Never
-  `drafts/`, `.claude/` or `node_modules/`.
+  `mods/*/README.md`, `claude/CLAUDE.md`, and the root `README.md` and
+  `CLAUDE.md`. Never `drafts/`, `.claude/` or `node_modules/`.
 
 ## Known names
 
@@ -46,6 +47,10 @@ A reference is fine when it names one of these:
 - **External skills:** third-party skills the repo refers to but does not
   ship, from the `EXTERNAL_SKILLS` list, such as `agent-browser`.
 - **Workflows:** folder names under `workflows/`, for `/<name>` only.
+- **Mod commands:** each `name` a mod registers with
+  `$.command.register({ name: '<n>', … })` in a `.ts`, `.tsx` or `.js`
+  file under its `hooks/`, for `/<name>` only. Test files
+  (`*.test.*`, `*.spec.*`) do not count.
 - **With `--home`:** every entry in `~/.claude/skills/`.
 
 ## Skill checks (errors)
@@ -87,14 +92,33 @@ workflows/flow/flow.js:1  [workflow-version]  no VERSION constant
 README.md:46  [workflow-row]  Workflows table has no row linking workflows/flow
 ```
 
+## Mod checks (errors)
+
+| Code           | Rule                                                        |
+|----------------|-------------------------------------------------------------|
+| `mod-files`    | `mods/<n>/` has `.claude-plugin/plugin.json`, `hooks/` and `README.md` |
+| `mod-manifest` | `plugin.json` is a JSON object with a `name` equal to the folder and a non-empty string `version` |
+| `mod-row`      | The root README `## Mods` section links `mods/<n>`          |
+
+```
+mods/tint  [mod-files]  no hooks/ folder
+mods/tint/.claude-plugin/plugin.json:1  [mod-manifest]  not a JSON object
+mods/tint/.claude-plugin/plugin.json:1  [mod-manifest]  name "tinted" does not match folder "tint"
+mods/tint/.claude-plugin/plugin.json:1  [mod-manifest]  no version
+README.md:64  [mod-row]  Mods table has no row linking mods/tint
+```
+
+- **Not `claude plugin validate`.** Only `name` and `version` are read;
+  run `claude plugin validate mods/<n>` for the full manifest.
+
 ## Reference checks
 
 | Code              | Sev   | Rule                                                 |
 |-------------------|-------|------------------------------------------------------|
 | `unknown-skill`   | error | `` `x` skill `` names a known skill                  |
 | `unknown-skill`   | error | A hyphenated `x-y skill` in a description names a known skill |
-| `broken-link`     | error | A Markdown link into `skills/` or `workflows/` resolves |
-| `unknown-command` | warn  | `/<name>` names a known skill, workflow or built-in  |
+| `broken-link`     | error | A Markdown link into `skills/`, `workflows/` or `mods/` resolves |
+| `unknown-command` | warn  | `/<name>` names a known skill, workflow, mod command or built-in |
 
 ```
 skills/alpha/SKILL.md:8  [unknown-skill]  `betta` skill is not a known skill
@@ -109,8 +133,8 @@ skills/alpha/SKILL.md:8  [unknown-command]  /alpah is not a known skill or built
   "this skill" never match. Common hyphenated words such as `built-in`
   and `third-party` are skipped too.
 - **Links** are resolved from the file's folder. Only targets inside
-  `skills/` or `workflows/` are checked; URLs, anchors and absolute paths
-  are not.
+  `skills/`, `workflows/` or `mods/` are checked; URLs, anchors and
+  absolute paths are not.
 - **`/<name>`** matches only at the start of a line or after a space, `(` or
   backtick, and not when followed by `/`, `:` or `.` plus a letter. So
   `/mnt/c`, `/dev/null` and `/etc.d` never match, while "run /doctor."
@@ -120,7 +144,7 @@ skills/alpha/SKILL.md:8  [unknown-command]  /alpah is not a known skill or built
 
 | Code              | Rule                                                     |
 |-------------------|----------------------------------------------------------|
-| `readme-sections` | `## What it is`, `## What it is not`, `## When not to use`, `## Install`, `## Usage` (`## Run` for a workflow), in that order |
+| `readme-sections` | `## What it is`, `## What it is not`, `## When not to use`, `## Install`, `## Usage` (`## Run` for a workflow), in that order, in each skill, workflow and mod README |
 
 ```
 skills/beta/README.md:1  [readme-sections]  no "## Usage" section
