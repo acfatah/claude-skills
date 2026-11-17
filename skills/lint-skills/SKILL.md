@@ -4,7 +4,7 @@ description: Lint a skills repo with a bundled Bun script - skill names match th
 allowed-tools: Bash(bun ${CLAUDE_SKILL_DIR}/scripts/lint.ts *)
 ---
 
-# Lint Skills v1.0.0
+# Lint Skills v1.1.0
 
 Run the bundled linter on a skills repo, report what it finds, and offer
 fixes. The script does the checking; this file says when to run it and
@@ -34,6 +34,11 @@ bun ${CLAUDE_SKILL_DIR}/scripts/lint.ts [--home] [--root <path>]
 - **Exit codes:** 0 no errors (warnings allowed), 1 errors found, 2 usage
   error or not a skills repo.
 
+It checks `skills/`, `workflows/` and, when the repo has one, `mods/`:
+each mod's files, its `plugin.json` name and version, its README
+sections and its root README row. Commands a mod registers count as
+known for `/<name>`.
+
 Every check, its severity and an example finding are in
 [`references/checks.md`](references/checks.md). Read it when a finding's
 meaning or a fix is unclear.
@@ -51,11 +56,12 @@ meaning or a fix is unclear.
 Offer a fix for each clear finding, and edit only after the user agrees:
 
 - **A typo** in a skill name, with exactly one close known name.
-- **A missing README row** in the root Skills or Workflows table.
+- **A missing README row** in the root Skills, Workflows or Mods table.
 - **A missing `vX.Y.Z`** in a `SKILL.md` H1: propose `v1.0.0` for a new
   skill.
 - **A missing README section,** or one out of order.
-- **A name mismatch:** ask which side is right, the folder or `name:`.
+- **A name mismatch:** ask which side is right, the folder or `name:`
+  (the `plugin.json` `name` for a mod).
 
 Rules:
 

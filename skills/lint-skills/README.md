@@ -12,15 +12,19 @@ skill, and reports every finding as `path:line  [code]  message`.
   rules (`a-z`, `0-9` and `-`, at most 64 characters, no `claude` or
   `anthropic`).
 - **Checks cross-references:** `` `name` skill `` mentions, hyphenated
-  names before "skill" in descriptions, and Markdown links into `skills/`
-  or `workflows/` all point at something that exists.
+  names before "skill" in descriptions, and Markdown links into
+  `skills/`, `workflows/` or `mods/` all point at something that exists.
 - **Checks repo rules:** each skill has a `README.md`, a `vX.Y.Z` at the
   end of its `SKILL.md` H1, and a row in the root README Skills table;
   each workflow has its `.js` file, a `VERSION` constant, a `README.md`
   and a Workflows row.
+- **Checks mods,** when the repo has a `mods/` folder: each mod has
+  `.claude-plugin/plugin.json`, `hooks/` and a `README.md`, its manifest
+  `name` matches the folder and has a `version`, and the root README Mods
+  table links it.
 - **Warns, without failing,** about `/<name>` mentions that match no known
-  skill, workflow or built-in, and about README sections that are missing
-  or out of order.
+  skill, workflow, mod command or built-in, and about README sections
+  that are missing or out of order.
 - **Checks your install** with `--home`: every link in `~/.claude/skills/`
   resolves, and each repo skill has an entry there.
 - **Offers fixes** for clear findings, and edits only after you agree.
@@ -97,14 +101,16 @@ A run goes through four stages:
    Without a `skills/` folder there, it exits 2.
 2. **Known names.** Every skill's folder and `name:`, a built-in list of
    Claude Code commands and bundled skills, a short list of external
-   skills the repo refers to (such as `agent-browser`), workflow names for
-   `/<name>`, and, with `--home`, every entry in `~/.claude/skills/`.
+   skills the repo refers to (such as `agent-browser`), workflow names and
+   the commands mods register for `/<name>`, and, with `--home`, every
+   entry in `~/.claude/skills/`.
 3. **Checks.** Each group reads its files and returns findings:
 
    | Group          | Example finding |
    |----------------|-----------------|
    | Skills         | `skills/alpha/SKILL.md:2  [name-mismatch]  name "alfa" does not match folder "alpha"` |
    | Workflows      | `workflows/flow/flow.js:1  [workflow-version]  no VERSION constant` |
+   | Mods           | `mods/tint/.claude-plugin/plugin.json:1  [mod-manifest]  no version` |
    | References     | `` skills/alpha/SKILL.md:8  [unknown-skill]  `betta` skill is not a known skill `` |
    | Links          | `skills/beta/README.md:3  [broken-link]  link target ../gone does not exist` |
    | README order   | `skills/beta/README.md:1  [readme-sections]  no "## Usage" section` |

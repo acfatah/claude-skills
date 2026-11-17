@@ -30,6 +30,8 @@ Rules for this repo only. My global instructions are in
 - **Checks:** run `claude plugin validate mods/<name>` and
   `claude plugin test mods/<name>` before suggesting the commit, and fix
   their errors.
+- **Lint:** run `bun skills/lint-skills/scripts/lint.ts` before
+  suggesting the commit, and fix its errors.
 
 ## README sections
 
