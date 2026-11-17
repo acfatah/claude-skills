@@ -61,6 +61,19 @@ The skills CLI does not install workflows. Each workflow is a single
 file that you download into `~/.claude/workflows/`; its README has the
 command.
 
+## Mods
+
+Claude Code mods: plugins with a hooks module that change Claude Code's own
+interface, such as how replies are drawn, not skills.
+
+| Mod | Description |
+|---|---|
+| [compact-tables](mods/compact-tables) | Redraw markdown tables in terminal replies in glow's style: one rule under the header, `│` between columns, no outer box or rules between rows, and inline code in red on grey. About 25-33% fewer rows per table; `/compact-tables` shows stats and turns it on or off. |
+
+The skills CLI does not install mods. Clone the repo and start Claude Code
+with `claude --plugin-dir <clone>/mods/<name>`; each mod's README has the
+details.
+
 ## Requirements
 
 These skills are opinionated, and so is the tooling around them.
@@ -88,6 +101,7 @@ Other software, by skill:
 | curl | readme-badges | Checks each badge image and link |
 | [Turso CLI](https://docs.turso.tech/cli) and account | issue-tracker | Optional, only for sync between your machines |
 | Windows or WSL | windows-screenshots | Plus the `SCREENSHOTS` variable; see its README |
+| Claude Code 2.1.326 or later | compact-tables | The mod API is early access |
 
 - **Gotcha:** promoting issues to a GitHub Project needs an extra scope:
   run `gh auth refresh -s project` once.
@@ -134,6 +148,13 @@ workflows/
     ├── <name>.js    Claude Code workflow script; the one file you
     |                download
     └── README.md    install, usage, and background
+mods/
+└── <name>/
+    ├── .claude-plugin/
+    |   └── plugin.json  mod manifest; its `version` is the mod's version
+    ├── hooks/       hooks module, its tests, and the code it uses
+    ├── bench/       optional - benchmarks, run with Bun
+    └── README.md    install, usage, and checks
 skills/
 └── <skill-name>/
     ├── SKILL.md     required - frontmatter `name` must match the folder
@@ -145,8 +166,8 @@ skills/
     └── test/        optional - tests for those scripts
 ```
 
-Every skill and workflow `README.md` uses the same sections: What it
-is, What it is not, When not to use, Install, and Usage (Run, for a
+Every skill, workflow and mod `README.md` uses the same sections: What
+it is, What it is not, When not to use, Install, and Usage (Run, for a
 workflow) with example prompts.
 
 ## Versioning
@@ -169,6 +190,7 @@ git log --oneline -- skills/windows-screenshots
 
 Workflows follow the same single-place rule. A workflow's version is
 the `VERSION` constant in its `.js` file, the one file users install.
+A mod's version is `version` in its `.claude-plugin/plugin.json`.
 
 ## Claude Code instructions
 

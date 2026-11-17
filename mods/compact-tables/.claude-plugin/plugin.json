@@ -1,0 +1,7 @@
+{
+  "name": "compact-tables",
+  "version": "0.1.0",
+  "description": "Draw markdown tables in replies compactly, glow style: one header rule, no box",
+  "author": { "name": "Achmad F. Ibrahim" },
+  "license": "MIT"
+}

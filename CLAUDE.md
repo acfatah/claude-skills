@@ -19,9 +19,21 @@ Rules for this repo only. My global instructions are in
 - **Version:** the `VERSION` constant in the `.js` file.
 - **Root README:** add or update its row in the Workflows table.
 
+## New or changed mod
+
+- **Folder:** `mods/<name>/` with `.claude-plugin/plugin.json`, `hooks/`
+  (the hooks module and its tests) and `README.md`; the manifest `name`
+  must match the folder name.
+- **Version:** `version` in `plugin.json`. Bump it in the same commit as
+  the change.
+- **Root README:** add or update its row in the Mods table.
+- **Checks:** run `claude plugin validate mods/<name>` and
+  `claude plugin test mods/<name>` before suggesting the commit, and fix
+  their errors.
+
 ## README sections
 
-Every skill and workflow `README.md` uses these sections, in order:
+Every skill, workflow and mod `README.md` uses these sections, in order:
 
 1. **Intro** paragraph under the H1.
 2. **What it is**, **What it is not**, **When not to use**: situation →
@@ -30,14 +42,17 @@ Every skill and workflow `README.md` uses these sections, in order:
    to it.
 4. **Usage** (**Run** for a workflow): How it loads, Example prompts, an
    optional Walkthrough, then a `Gotchas:` list (or a pointer to where
-   they live) and a link to `SKILL.md` or the `.js` file.
+   they live) and a link to `SKILL.md`, the `.js` file, or a mod's hooks
+   module.
 
 - **How it loads:** description match, naming it (`/<name>`) always
-  works, and what Claude asks back.
+  works, and what Claude asks back. For a mod: when its hooks run, and
+  its commands.
 - **Example prompts:** 4-8, grouped by task, one `/<name>` form.
-- **Sources:** every claim comes from `SKILL.md`, `references/` or the
-  `.js` file. If they are silent, the README is silent; offer any gap as
-  an issue.
+- **Sources:** every claim comes from `SKILL.md`, `references/`, the
+  `.js` file, or a mod's code. Label measurements as measured on one
+  machine. If they are silent, the README is silent; offer any gap as an
+  issue.
 - **Style:** wrap prose at 80 and bold the key word in each bullet. Never
   wrap code, tables, URLs or paths, and keep inline code on one line.
 - **Examples:** `skills/issue-tracker/README.md`, and
