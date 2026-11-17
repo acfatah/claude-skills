@@ -208,6 +208,10 @@ ln -sfn "$PWD/claude/CLAUDE.md" ~/.claude/CLAUDE.md
 
 This replaces any existing `~/.claude/CLAUDE.md`, so back that up first.
 
+Its replies use plain markdown headings and `---` rules. The
+[`reply-style`](mods/reply-style) mod draws them in the glow style in the
+terminal; without it they show as the terminal's own headings.
+
 For plan documents, phased plans and the roadmap workflow, see the
 [`plans-and-roadmaps`](skills/plans-and-roadmaps) skill. To let Claude
 commit each finished change or phase instead of waiting, see the
