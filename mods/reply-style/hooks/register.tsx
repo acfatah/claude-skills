@@ -2,22 +2,26 @@ import type { Register } from 'claude-code'
 
 import { FEATURES, parse, USAGE } from './command'
 import type { Feature } from './command'
-import { boxedRows, layout, segment } from './table'
+import { mayHold, segment } from './segment'
+import type { Item, Segment } from './segment'
+import { boxedRows, layout } from './table'
 import type { Line } from './table'
 
-// glow-style.json: inline code 203 on 236.
+// glow-style.json: inline code 203 on 236, list items `• `, indented 2.
 const CODE_FG = '#ff5f5f'
 const CODE_BG = '#303030'
+const ITEM = '• '
 const BULLET = 2
 
 export const register: Register = on => {
   // Switches and measurements for this load; a reload starts them over.
-  const isOn: Record<Feature, boolean> = { tables: true }
+  const isOn: Record<Feature, boolean> = { tables: true, bullets: true }
   let calls = 0
   let drawn = 0
   let tables = 0
   let rowsMine = 0
   let rowsBoxed = 0
+  let lists = 0
   let totalMs = 0
   let maxMs = 0
 
@@ -34,7 +38,7 @@ export const register: Register = on => {
     const cmd = parse(e.args)
     if (cmd.kind === 'usage') return { text: USAGE }
     if (cmd.kind === 'reset') {
-      calls = drawn = tables = rowsMine = rowsBoxed = totalMs = maxMs = 0
+      calls = drawn = tables = rowsMine = rowsBoxed = lists = totalMs = maxMs = 0
 
       return { text: 'Reply style: stats reset.' }
     }
@@ -50,24 +54,24 @@ export const register: Register = on => {
     return {
       text: [
         `Reply style: ${FEATURES.map(f => `${f} ${isOn[f] ? 'on' : 'off'}`).join(', ')}`,
-        `- Message renders seen: ${calls}; with a table, drawn by the mod: ${drawn}`,
-        `- Tables drawn: ${tables} (counted per render, so streaming counts repeats)`,
-        `- Rows: ${rowsMine} compact vs about ${rowsBoxed} boxed, ${saved} saved`,
-        `- Hook time per table render: avg ${avg} ms, max ${maxMs} ms`,
+        `- Message renders seen: ${calls}; drawn by the mod: ${drawn}`,
+        `- Tables drawn: ${tables}; bullet lists drawn: ${lists} (counted per render, so streaming counts repeats)`,
+        `- Table rows: ${rowsMine} compact vs about ${rowsBoxed} boxed, ${saved} saved`,
+        `- Hook time per drawn render: avg ${avg} ms, max ${maxMs} ms`,
       ].join('\n'),
     }
   })
 
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
     calls++
-    if (!isOn.tables || e.surface !== 'terminal' || !e.props.text.includes('|')) return next(e)
+    const text = e.props.text
+    if (e.surface !== 'terminal' || !mayHold(text, isOn)) return next(e)
 
     const started = Date.now()
-    const parts = segment(e.props.text)
-    if (!parts.some(p => p.kind === 'table')) return next(e)
+    const parts = segment(text, isOn)
+    if (parts.every(p => p.kind === 'markdown')) return next(e)
 
     const { Box, Text, Markdown } = $.ui.resolve(e)
-    const columns = (e.viewport?.columns ?? 80) - BULLET - 1
 
     const line = (l: Line, i: number) => (
       <Text key={`l${i}`}>
@@ -85,26 +89,62 @@ export const register: Register = on => {
       </Text>
     )
 
-    const body = parts.map((p, i) => {
-      const gap = i < parts.length - 1 ? 1 : 0
-      if (p.kind === 'markdown') {
+    // A blank line between two parts where the reply has one, and always
+    // around a table, as before bullets were drawn.
+    const gapAbove = (all: Segment[], i: number) => {
+      const p = all[i]
+      const prev = all[i - 1]
+      if (!p || !prev) return 0
+
+      return p.blankBefore || p.kind === 'table' || prev.kind === 'table' ? 1 : 0
+    }
+
+    const item = (it: Item, i: number, columns: number) => (
+      <Box key={`i${i}`} flexDirection="row" marginTop={i > 0 && it.blankBefore ? 1 : 0}>
+        <Box width={ITEM.length} flexShrink={0}>
+          <Text>{ITEM}</Text>
+        </Box>
+        <Box flexDirection="column" flexGrow={1}>
+          {draw(segment(it.body, isOn), columns - ITEM.length)}
+        </Box>
+      </Box>
+    )
+
+    // Draws parts at `columns` wide; an item's body is drawn the same way,
+    // so nested lists, and tables or code in an item, work at any depth.
+    const draw = (all: Segment[], columns: number) =>
+      all.map((p, i) => {
+        const key = `p${i}`
+        const top = gapAbove(all, i)
+        if (p.kind === 'markdown') {
+          return (
+            <Box key={key} marginTop={top}>
+              <Markdown text={p.text} />
+            </Box>
+          )
+        }
+        if (p.kind === 'list') {
+          lists++
+
+          return (
+            <Box key={key} flexDirection="column" marginTop={top}>
+              {p.items.map((it, j) => item(it, j, columns))}
+            </Box>
+          )
+        }
+        const lines = layout(p.table, columns)
+        tables++
+        rowsMine += lines.length
+        rowsBoxed += boxedRows(p.table, columns)
+
         return (
-          <Box marginBottom={gap}>
-            <Markdown text={p.text} />
+          <Box key={key} flexDirection="column" marginTop={top}>
+            {lines.map(line)}
           </Box>
         )
-      }
-      const lines = layout(p.table, columns)
-      tables++
-      rowsMine += lines.length
-      rowsBoxed += boxedRows(p.table, columns)
+      })
 
-      return (
-        <Box flexDirection="column" marginBottom={gap}>
-          {lines.map(line)}
-        </Box>
-      )
-    })
+    const body = draw(parts, (e.viewport?.columns ?? 80) - BULLET - 1)
 
     const ms = Date.now() - started
     drawn++

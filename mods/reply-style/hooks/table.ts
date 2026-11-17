@@ -1,17 +1,10 @@
-// Pure table logic: split a reply into markdown and table segments, then lay a
-// table out as lines of styled spans. No engine imports, so a benchmark or a
-// test can run it alone.
+// Pure table logic: lay a table out as lines of styled spans. No engine
+// imports, so a benchmark or a test can run it alone.
 
 export type Style = 'plain' | 'bold' | 'code' | 'rule'
 export type Span = { text: string; style: Style }
 export type Line = Span[]
 export type Table = { header: string[]; rows: string[][] }
-export type Segment = { kind: 'markdown'; text: string } | { kind: 'table'; table: Table }
-
-const SEPARATOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/
-const FENCE = /^\s*(```|~~~)/
-
-const isRow = (line: string) => line.trim().startsWith('|')
 
 // Splits on unescaped pipes, dropping the outer empty cells.
 export const splitRow = (line: string): string[] => {
@@ -38,43 +31,6 @@ export const splitRow = (line: string): string[] => {
 
   return cells
 }
-
-export const segment = (text: string): Segment[] => {
-  const lines = text.split('\n')
-  const out: Segment[] = []
-  let buf: string[] = []
-  let inFence = false
-  const flush = () => {
-    const md = buf.join('\n').replace(/^\n+|\n+$/g, '')
-    if (md.trim()) out.push({ kind: 'markdown', text: md })
-    buf = []
-  }
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? ''
-    if (FENCE.test(line)) inFence = !inFence
-    const next = lines[i + 1]
-    if (!inFence && isRow(line) && next !== undefined && SEPARATOR.test(next)) {
-      flush()
-      const header = splitRow(line)
-      const rows: string[][] = []
-      i += 2
-      while (i < lines.length && isRow(lines[i] ?? '')) {
-        const cells = splitRow(lines[i] ?? '')
-        rows.push(header.map((_, c) => cells[c] ?? ''))
-        i++
-      }
-      i--
-      out.push({ kind: 'table', table: { header, rows } })
-    } else {
-      buf.push(line)
-    }
-  }
-  flush()
-
-  return out
-}
-
-export const hasTable = (text: string) => segment(text).some(s => s.kind === 'table')
 
 // Inline markup in a cell: `code` and **bold**; anything else is plain.
 export const spans = (cell: string): Span[] => {

@@ -30,9 +30,20 @@ test('a reply with a table is drawn by the mod, with a header rule', async $ => 
   await ui.unmount()
 })
 
-test('a reply without a table is left to the engine', async $ => {
-  const ui = await $.ui.mount(MSG('No table | here, just a pipe.'))
+test('a reply without a table or a bullet is left to the engine', async $ => {
+  const ui = await $.ui.mount(MSG('No table | here, just a pipe.\n\n1. An ordered item'))
 
   expect(await ui.find({ text: /─┼─/ })).toBeUndefined()
+  expect(await ui.find({ text: /•/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('bullets are drawn as •, nested ones too, with their text as markdown', async $ => {
+  const ui = await $.ui.mount(MSG('Intro.\n\n- **One:** first\n  - inner\n- two'))
+
+  expect((await ui.findAll({ type: 'Text', text: /^• $/ })).length).toBe(3)
+  expect(await ui.find({ type: 'Markdown', text: '**One:** first' })).toBeDefined()
+  expect(await ui.find({ type: 'Markdown', text: 'inner' })).toBeDefined()
+  expect(await ui.find({ text: /^- / })).toBeUndefined()
   await ui.unmount()
 })
