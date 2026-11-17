@@ -1,5 +1,5 @@
 // Benchmark the table layout: render time, and rows saved against a boxed table.
-// Run with: bun mods/compact-tables/bench/table.bench.ts
+// Run with: bun mods/reply-style/bench/table.bench.ts
 import { segment, layout, boxedRows } from '../hooks/table.ts'
 const small = `Some intro.
 

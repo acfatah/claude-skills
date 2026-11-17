@@ -68,7 +68,7 @@ interface, such as how replies are drawn, not skills.
 
 | Mod | Description |
 |---|---|
-| [compact-tables](mods/compact-tables) | Redraw markdown tables in terminal replies in glow's style: one rule under the header, `│` between columns, no outer box or rules between rows, and inline code in red on grey. About 25-33% fewer rows per table; `/compact-tables` shows stats and turns it on or off. |
+| [reply-style](mods/reply-style) | Redraw parts of terminal replies in glow's style, each switchable with `/reply-style`: tables get one rule under the header, `│` between columns, no outer box or rules between rows, and inline code in red on grey, for about 25-33% fewer rows per table. |
 
 The skills CLI does not install mods. Clone the repo and start Claude Code
 with `claude --plugin-dir <clone>/mods/<name>`; each mod's README has the
@@ -101,7 +101,7 @@ Other software, by skill:
 | curl | readme-badges | Checks each badge image and link |
 | [Turso CLI](https://docs.turso.tech/cli) and account | issue-tracker | Optional, only for sync between your machines |
 | Windows or WSL | windows-screenshots | Plus the `SCREENSHOTS` variable; see its README |
-| Claude Code 2.1.326 or later | compact-tables | The mod API is early access |
+| Claude Code 2.1.326 or later | reply-style | The mod API is early access |
 
 - **Gotcha:** promoting issues to a GitHub Project needs an extra scope:
   run `gh auth refresh -s project` once.

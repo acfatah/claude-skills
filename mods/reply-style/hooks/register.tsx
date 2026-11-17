@@ -1,5 +1,7 @@
 import type { Register } from 'claude-code'
 
+import { FEATURES, parse, USAGE } from './command'
+import type { Feature } from './command'
 import { boxedRows, layout, segment } from './table'
 import type { Line } from './table'
 
@@ -9,8 +11,8 @@ const CODE_BG = '#303030'
 const BULLET = 2
 
 export const register: Register = on => {
-  // Measurements for this load; a reload starts them over.
-  let isOn = true
+  // Switches and measurements for this load; a reload starts them over.
+  const isOn: Record<Feature, boolean> = { tables: true }
   let calls = 0
   let drawn = 0
   let tables = 0
@@ -21,31 +23,33 @@ export const register: Register = on => {
 
   on('session.start', async ($, e, next) => {
     await $.command.register({
-      name: 'compact-tables',
-      description: 'Compact tables: show stats, or turn them on or off (on|off|reset)',
+      name: 'reply-style',
+      description: `Reply style: show stats, turn features on or off ([${FEATURES.join('|')}] on|off), or reset`,
     })
 
     return next(e)
   })
 
-  on('command.run', { command: 'compact-tables' }, async (_$, e) => {
-    const arg = (e.args ?? '').trim()
-    if (arg === 'on' || arg === 'off') {
-      isOn = arg === 'on'
-
-      return { text: `Compact tables ${arg}. New and redrawn replies use it.` }
-    }
-    if (arg === 'reset') {
+  on('command.run', { command: 'reply-style' }, async (_$, e) => {
+    const cmd = parse(e.args)
+    if (cmd.kind === 'usage') return { text: USAGE }
+    if (cmd.kind === 'reset') {
       calls = drawn = tables = rowsMine = rowsBoxed = totalMs = maxMs = 0
 
-      return { text: 'Compact tables: stats reset.' }
+      return { text: 'Reply style: stats reset.' }
+    }
+    if (cmd.kind === 'set') {
+      for (const f of cmd.features) isOn[f] = cmd.on
+      const which = cmd.features.length === 1 ? cmd.features[0] : 'all features'
+
+      return { text: `Reply style: ${which} ${cmd.on ? 'on' : 'off'}. New and redrawn replies use it.` }
     }
     const avg = drawn ? (totalMs / drawn).toFixed(2) : '0'
     const saved = rowsBoxed - rowsMine
 
     return {
       text: [
-        `Compact tables: ${isOn ? 'on' : 'off'}`,
+        `Reply style: ${FEATURES.map(f => `${f} ${isOn[f] ? 'on' : 'off'}`).join(', ')}`,
         `- Message renders seen: ${calls}; with a table, drawn by the mod: ${drawn}`,
         `- Tables drawn: ${tables} (counted per render, so streaming counts repeats)`,
         `- Rows: ${rowsMine} compact vs about ${rowsBoxed} boxed, ${saved} saved`,
@@ -56,7 +60,7 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'AssistantMessage' }, async ($, e, next) => {
     calls++
-    if (!isOn || e.surface !== 'terminal' || !e.props.text.includes('|')) return next(e)
+    if (!isOn.tables || e.surface !== 'terminal' || !e.props.text.includes('|')) return next(e)
 
     const started = Date.now()
     const parts = segment(e.props.text)

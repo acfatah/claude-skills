@@ -13,7 +13,7 @@ const TEXT = [
 
 const MSG = (text: string) =>
   ({
-    plugin: 'compact-tables',
+    plugin: 'reply-style',
     surface: 'terminal',
     component: 'AssistantMessage',
     props: { text, isFirstOfReply: true },
