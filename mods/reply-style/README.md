@@ -10,9 +10,10 @@ feature you can turn on or off on its own:
 - **Bullets:** unordered list items start with `•` instead of `-`, nested
   ones indented 2 columns per level, and wrapped lines line up under the
   item's text.
-- **Headings:** glow's look, bold blue (`39`): `#` reversed with a space
-  each side, `##` as `█ Title` over a 75-column rule, `###` as `▌ Title`,
-  and `####` as `│ Title`, not bold. Deeper levels are bold blue alone.
+- **Headings:** glow's shapes in the terminal's default colour, bold: `#`
+  with a space each side, `##` as `█ Title` over a 75-column rule, `###` as
+  `▌ Title`, and `####` as `│ Title`, not bold. Deeper levels are bold
+  alone. A heading right under a rule keeps no blank line between them.
 - **Rules:** a `---`, `***` or `___` line is kept as written and drawn dim.
 
 Replies the mod has nothing to change in are left to the built-in renderer.
@@ -232,6 +233,11 @@ Gotchas:
 - **Heading text styles code only.** Inline code in a heading is red on
   grey, and `**` markers are dropped, since the heading is bold already.
   Italics and links in a heading show as raw markdown.
+- **Heading colours are set in code.** `HEAD_COLOR` in
+  `hooks/register.tsx` holds a `color` and `backgroundColor` per level,
+  all empty for now; the h2 rule takes the h2 `color`. Its comment gives
+  glow's values (blue `#00afff`, and h1 as `#080808` on blue). There is no
+  command or setting for them.
 - **Indents count spaces.** A tab counts as one column, so a list indented
   with tabs can nest differently from the built-in renderer.
 - **Loose items keep a blank line.** A blank line between two items stays

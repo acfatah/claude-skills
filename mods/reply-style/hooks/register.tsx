@@ -8,12 +8,16 @@ import { boxedRows, layout, spans } from './table'
 import type { Line } from './table'
 
 // glow-style.json: inline code 203 on 236, list items `• `, indented 2;
-// headings bold 39, h1 232 on 39 with a space each side, h2 `█ ` over a
-// 75-column rule, h3 `▌ `, h4 `│ ` and not bold.
+// h1 with a space each side, h2 `█ ` over a 75-column rule, h3 `▌ `, h4
+// `│ ` and not bold.
 const CODE_FG = '#ff5f5f'
 const CODE_BG = '#303030'
-const HEAD_FG = '#00afff'
-const H1_FG = '#080808'
+// Heading colours per level; an empty entry keeps the terminal's default.
+// glow's: blue 39 for every level, `{ color: '#00afff' }`, and h1 232 on
+// 39, `{ color: '#080808', backgroundColor: '#00afff' }`. An h2's rule
+// takes the h2 `color`.
+type HeadColor = { color?: string; backgroundColor?: string }
+const HEAD_COLOR: Record<number, HeadColor> = { 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} }
 const ITEM = '• '
 const BULLET = 2
 const H2_RULE = 75
@@ -98,11 +102,13 @@ export const register: Register = on => {
     )
 
     // A blank line between two parts where the reply has one, always above
-    // a heading, and always around a table, as before bullets were drawn.
+    // a heading (unless right under a rule, as References is), and always
+    // around a table, as before bullets were drawn.
     const gapAbove = (all: Segment[], i: number) => {
       const p = all[i]
       const prev = all[i - 1]
       if (!p || !prev) return 0
+      if (p.kind === 'heading' && prev.kind === 'rule') return p.blankBefore ? 1 : 0
 
       return p.blankBefore || p.kind === 'heading' || p.kind === 'table' || prev.kind === 'table' ? 1 : 0
     }
@@ -119,11 +125,7 @@ export const register: Register = on => {
       )
 
       return (
-        <Text
-          color={h1 ? H1_FG : HEAD_FG}
-          backgroundColor={h1 ? HEAD_FG : undefined}
-          bold={level !== 4}
-        >
+        <Text {...HEAD_COLOR[level]} bold={level !== 4}>
           {PREFIX[level] ?? ''}
           {parts}
           {h1 ? ' ' : ''}
@@ -161,7 +163,7 @@ export const register: Register = on => {
           return (
             <Box key={key} flexDirection="column" marginTop={top}>
               {headingText(p.level, p.text)}
-              {p.level === 2 ? <Text color={HEAD_FG}>{'─'.repeat(Math.min(H2_RULE, columns))}</Text> : null}
+              {p.level === 2 ? <Text color={HEAD_COLOR[2]?.color}>{'─'.repeat(Math.min(H2_RULE, columns))}</Text> : null}
             </Box>
           )
         }
