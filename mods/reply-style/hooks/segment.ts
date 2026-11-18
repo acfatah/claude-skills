@@ -1,6 +1,6 @@
 // Splits a reply into the parts the mod draws (tables, bullet lists, headings,
-// rules) and the markdown between them, which the engine draws. No engine imports, so a
-// benchmark or a test can run it alone.
+// rules), the code fences, and the markdown between them, which the engine
+// draws. No engine imports, so a benchmark or a test can run it alone.
 
 import { splitRow } from './table'
 import type { Table } from './table'
@@ -12,6 +12,8 @@ export type Item = { body: string; blankBefore: boolean }
 // `blankBefore`: a blank line separates the part from the one before it.
 export type Segment =
   | { kind: 'markdown'; text: string; blankBefore: boolean }
+  // A fenced code block, fences included; the engine draws it, full width.
+  | { kind: 'code'; text: string; blankBefore: boolean }
   | { kind: 'table'; table: Table; blankBefore: boolean }
   | { kind: 'list'; items: Item[]; blankBefore: boolean }
   | { kind: 'heading'; level: number; text: string; blankBefore: boolean }
@@ -127,6 +129,26 @@ export const segment = (text: string, parts: Parts): Segment[] => {
     if (isBlank(line)) {
       buf.push(line)
       gap = true
+      continue
+    }
+    // A fence closes an ordered item it is not indented under.
+    if (!inFence && ordered >= 0 && FENCE.test(line) && indentOf(line) < ordered) ordered = -1
+    // A fence outside an ordered item, with its body, is a part of its own.
+    if (!inFence && ordered < 0 && FENCE.test(line) && indentOf(line) <= 3) {
+      flush()
+      const code = [line]
+      let j = i + 1
+      while (j < lines.length) {
+        const l = lines[j] ?? ''
+        code.push(l)
+        j++
+        if (FENCE.test(l)) break
+      }
+      // An unclosed fence runs to the end; its trailing blank lines go.
+      while (code.length > 1 && isBlank(code[code.length - 1] ?? '')) code.pop()
+      out.push({ kind: 'code', text: code.join('\n'), blankBefore: gap })
+      gap = false
+      i = j - 1
       continue
     }
     const wasFence = inFence

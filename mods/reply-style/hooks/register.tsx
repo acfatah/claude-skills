@@ -21,11 +21,14 @@ const HEAD_COLOR: Record<number, HeadColor> = { 1: {}, 2: {}, 3: {}, 4: {}, 5: {
 const ITEM = '• '
 const BULLET = 2
 const H2_RULE = 75
+// Prose wraps at this many columns from the text column, as the engine's own
+// replies do; code and tables keep the full width.
+const PROSE = 75
 const PREFIX: Record<number, string> = { 1: ' ', 2: '█ ', 3: '▌ ', 4: '│ ' }
 
 export const register: Register = on => {
   // Switches and measurements for this load; a reload starts them over.
-  const isOn: Record<Feature, boolean> = { tables: true, bullets: true, headings: true, rules: true }
+  const isOn: Record<Feature, boolean> = { tables: true, bullets: true, headings: true, rules: true, width: true }
   let calls = 0
   let drawn = 0
   let tables = 0
@@ -81,7 +84,7 @@ export const register: Register = on => {
 
     const started = Date.now()
     const parts = segment(text, isOn)
-    if (parts.every(p => p.kind === 'markdown')) return next(e)
+    if (parts.every(p => p.kind === 'markdown' || p.kind === 'code')) return next(e)
 
     const { Box, Text, Markdown } = $.ui.resolve(e)
 
@@ -133,24 +136,32 @@ export const register: Register = on => {
       )
     }
 
-    const item = (it: Item, i: number, columns: number) => (
+    const item = (it: Item, i: number, columns: number, prose: number) => (
       <Box key={`i${i}`} flexDirection="row" marginTop={i > 0 && it.blankBefore ? 1 : 0}>
         <Box width={ITEM.length} flexShrink={0}>
           <Text>{ITEM}</Text>
         </Box>
         <Box flexDirection="column" flexGrow={1}>
-          {draw(segment(it.body, isOn), columns - ITEM.length)}
+          {draw(segment(it.body, isOn), columns - ITEM.length, prose - ITEM.length)}
         </Box>
       </Box>
     )
 
-    // Draws parts at `columns` wide; an item's body is drawn the same way,
-    // so nested lists, and tables or code in an item, work at any depth.
-    const draw = (all: Segment[], columns: number) =>
+    // Draws parts at `columns` wide, with prose at `prose` wide; an item's
+    // body is drawn the same way, so nested lists, and tables or code in an
+    // item, work at any depth.
+    const draw = (all: Segment[], columns: number, prose: number) =>
       all.map((p, i) => {
         const key = `p${i}`
         const top = gapAbove(all, i)
         if (p.kind === 'markdown') {
+          return (
+            <Box key={key} marginTop={top} width={prose}>
+              <Markdown text={p.text} />
+            </Box>
+          )
+        }
+        if (p.kind === 'code') {
           return (
             <Box key={key} marginTop={top}>
               <Markdown text={p.text} />
@@ -162,7 +173,7 @@ export const register: Register = on => {
 
           return (
             <Box key={key} flexDirection="column" marginTop={top}>
-              {headingText(p.level, p.text)}
+              <Box width={prose}>{headingText(p.level, p.text)}</Box>
               {p.level === 2 ? <Text color={HEAD_COLOR[2]?.color}>{'─'.repeat(Math.min(H2_RULE, columns))}</Text> : null}
             </Box>
           )
@@ -181,7 +192,7 @@ export const register: Register = on => {
 
           return (
             <Box key={key} flexDirection="column" marginTop={top}>
-              {p.items.map((it, j) => item(it, j, columns))}
+              {p.items.map((it, j) => item(it, j, columns, prose))}
             </Box>
           )
         }
@@ -197,7 +208,8 @@ export const register: Register = on => {
         )
       })
 
-    const body = draw(parts, (e.viewport?.columns ?? 80) - BULLET - 1)
+    const columns = (e.viewport?.columns ?? 80) - BULLET - 1
+    const body = draw(parts, columns, isOn.width ? Math.min(PROSE, columns) : columns)
 
     const ms = Date.now() - started
     drawn++

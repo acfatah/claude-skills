@@ -15,6 +15,8 @@ test('reset, and on or off for every feature', () => {
 
 test('on or off for one feature', () => {
   expect(parse('tables off')).toEqual({ kind: 'set', features: ['tables'], on: false })
+  expect(parse('width off')).toEqual({ kind: 'set', features: ['width'], on: false })
+  expect(parse('width on')).toEqual({ kind: 'set', features: ['width'], on: true })
 })
 
 test('anything else shows the usage', () => {

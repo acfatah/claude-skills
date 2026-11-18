@@ -41,8 +41,7 @@ test('a heading after a list ends it', () => {
   expect(kinds('- one\n### Next', ONLY({ bullets: true }))).toEqual(['list', 'markdown'])
 })
 
-test('fences, rules and ordered lists are left to the engine', () => {
-  expect(kinds('```\n- in a fence\n```')).toEqual(['markdown'])
+test('rules and ordered lists are left to the engine', () => {
   expect(kinds('Title\n\n---\n\n- - -\n\n***', ONLY({ bullets: true }))).toEqual(['markdown'])
   expect(kinds('1. First\n   - nested under it\n2. Second')).toEqual(['markdown'])
   expect(kinds('-no space is not a bullet')).toEqual(['markdown'])
@@ -76,7 +75,7 @@ test('ATX headings: level, text, closing hashes', () => {
   ])
   expect(heads('## C#')).toEqual([[2, 'C#']])
   expect(kinds('#hashtag, not a heading')).toEqual(['markdown'])
-  expect(kinds('```\n## in a fence\n```')).toEqual(['markdown'])
+  expect(kinds('```\n## in a fence\n```')).toEqual(['code'])
   expect(kinds('1. Step\n   ## inside the item')).toEqual(['markdown'])
 })
 
@@ -87,4 +86,31 @@ test('rules: kept as written; a dash line under text is a setext heading', () =>
   expect(kinds('Text\n***')).toEqual(['markdown', 'rule'])
   expect(kinds('---\n### References')).toEqual(['rule', 'heading'])
   expect(kinds('- - -')).toEqual(['rule'])
+})
+
+test('a code fence is its own part, with what is inside left unparsed', () => {
+  const parts = segment('Intro.\n\n```ts\nconst a = 1\n```\nOutro.', ALL)
+  expect(parts.map(p => [p.kind, p.blankBefore])).toEqual([
+    ['markdown', false],
+    ['code', true],
+    ['markdown', false],
+  ])
+  expect(parts[1]).toEqual({ kind: 'code', text: '```ts\nconst a = 1\n```', blankBefore: true })
+  expect(kinds('```\n- in a fence\n| A | B |\n| --- | --- |\n```')).toEqual(['code'])
+})
+
+test('an unclosed fence runs to the end of the text', () => {
+  expect(segment('Text.\n```\n- one\n\n## two\n\n', ALL).map(p => p.kind)).toEqual(['markdown', 'code'])
+  expect(segment('```\na\n\n', ALL)[0]).toEqual({ kind: 'code', text: '```\na', blankBefore: false })
+})
+
+test('a fence in an item stays in it; splitting the body yields a code part', () => {
+  const [body] = bodies('- run it:\n\n  ```bash\n  ls\n  ```\n- done')
+  expect(body).toBe('run it:\n\n```bash\nls\n```')
+  expect(kinds(body ?? '')).toEqual(['markdown', 'code'])
+})
+
+test('a fence inside an ordered item stays with it', () => {
+  expect(kinds('1. Step\n\n   ```\n   ls\n   ```\n2. Next')).toEqual(['markdown'])
+  expect(kinds('1. Step\n\n```\nls\n```')).toEqual(['markdown', 'code'])
 })

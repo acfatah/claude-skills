@@ -15,6 +15,11 @@ feature you can turn on or off on its own:
   `▌ Title`, and `####` as `│ Title`, not bold. Deeper levels are bold
   alone. A heading right under a rule keeps no blank line between them.
 - **Rules:** a `---`, `***` or `___` line is kept as written and drawn dim.
+- **Width:** in a reply the mod draws, prose wraps at 75 columns from the
+  text column, as in replies the built-in renderer draws, or at the
+  terminal's width when that is narrower. Paragraphs, bullet text,
+  headings, quotes and ordered lists are capped; code blocks and tables
+  keep the full width.
 
 Replies the mod has nothing to change in are left to the built-in renderer.
 
@@ -85,7 +90,8 @@ Headings, as Claude writes them, then as the mod draws them (the rule is
   and rules were added.
 - **Switchable.** `/reply-style tables off` hands tables back to the
   built-in renderer without unloading the mod; `/reply-style off` does it
-  for every feature.
+  for every feature. `/reply-style width off` lets prose run the full
+  width again.
 
 ## What it is not
 
@@ -113,6 +119,8 @@ Headings, as Claude writes them, then as the mod draws them (the rule is
 - **You want `-` bullets back** → run `/reply-style bullets off`.
 - **You want the built-in headings or rules** → run
   `/reply-style headings off` or `/reply-style rules off`.
+- **You want prose to use the whole width** → run
+  `/reply-style width off`.
 
 **Negative example:** a reply that compares CJK place names with emoji
 status icons in a table will not line up with this mod; turn it off with
@@ -164,7 +172,10 @@ marketplace entry yet, so `/plugin install` does not find it.
   for boxed, and hook time per drawn render (average and maximum).
 - **`/reply-style <feature> off`** and **`/reply-style <feature> on`:**
   turn one feature off or on, where `<feature>` is `tables`, `bullets`,
-  `headings` or `rules`. New and redrawn replies follow the switch.
+  `headings`, `rules` or `width`. New and redrawn replies follow the
+  switch.
+- **`/reply-style width off`:** lets prose in replies the mod draws run
+  the full terminal width; `width on` caps it at 75 columns again.
 - **`/reply-style off`** and **`/reply-style on`:** turn every feature off
   or on.
 - **`/reply-style reset`:** sets the stats back to zero.
@@ -197,11 +208,12 @@ bun mods/reply-style/bench/table.bench.ts
 - **`validate`** type-checks the hooks module. It warns that the mod has
   no icon; that is expected.
 - **`test`** runs three files. `hooks/register.test.tsx` checks that a
-  reply with a table, bullets, headings or a rule is drawn by the mod, and
-  that one with none of them is left to the built-in renderer.
+  reply with a table, bullets, headings or a rule is drawn by the mod,
+  that one with none of them is left to the built-in renderer, and that
+  prose is capped at 75 columns while code is not.
   `hooks/segment.test.ts` checks how a reply is split: nested and wrapped
-  items, heading levels, rules and setext headings, fences, ordered lists,
-  and each switch. `hooks/command.test.ts` checks the command's
+  items, heading levels, rules and setext headings, code fences, ordered
+  lists, and each switch. `hooks/command.test.ts` checks the command's
   arguments.
 - **The benchmark** prints the time per render for a 3-row table, a 40-row
   table, a 30-item nested list and a reply with neither, then the rows
@@ -242,6 +254,13 @@ Gotchas:
   with tabs can nest differently from the built-in renderer.
 - **Loose items keep a blank line.** A blank line between two items stays
   in the drawing, as it does in the source.
+- **The cap follows the terminal on resize.** A width change redraws the
+  reply once the resize settles, so the prose rewraps at the new width.
+- **The cap is the mod's only in replies it draws.** A reply with nothing
+  for the mod to change goes to the built-in renderer, so its prose
+  follows that renderer's own width.
+- **Code inside an ordered item is capped.** A fence indented under a
+  `1.` item stays with that item's prose, so it wraps at 75 columns too.
 - **Task items are plain items.** `- [ ] task` draws as `•` followed by
   `[ ] task`.
 
