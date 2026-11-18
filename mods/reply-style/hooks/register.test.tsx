@@ -102,3 +102,40 @@ test('a drawn reply keeps a blank line above it, as the engine draws one', async
   expect((await later.find({ type: 'Box', key: 'reply' }))?.props.marginTop).toBe(1)
   await later.unmount()
 })
+
+const AT = (text: string, columns: number) => ({ ...MSG(text), viewport: { columns, rows: 40 } })
+const WIDE = '## Top\n\nSome prose.\n\n```\ncode\n```'
+
+test('prose wraps at 75 columns on a wide terminal; code keeps the full width', async $ => {
+  const ui = await $.ui.mount(AT(WIDE, 120))
+
+  // Parts: p0 heading, p1 prose, p2 code.
+  expect((await ui.find({ type: 'Box', key: 'p1' }))?.props.width).toBe(75)
+  expect((await ui.find({ type: 'Box', key: 'p2' }))?.props.width).toBeUndefined()
+  expect(await ui.find({ type: 'Markdown', text: '```\ncode\n```' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('below 75 columns, prose uses the whole available width', async $ => {
+  const ui = await $.ui.mount(AT(WIDE, 60))
+
+  expect((await ui.find({ type: 'Box', key: 'p1' }))?.props.width).toBe(57)
+  await ui.unmount()
+})
+
+test('a bullet item caps its prose at the same right edge', async $ => {
+  const ui = await $.ui.mount(AT('- one', 120))
+
+  const widths = (await ui.findAll({ type: 'Box' })).map(b => b.props.width)
+  expect(widths).toContain(73)
+  expect(widths).not.toContain(75)
+  await ui.unmount()
+})
+
+test('with width off, prose is as wide as the available width', async $ => {
+  await $.command.run({ command: 'reply-style', args: 'width off' })
+  const ui = await $.ui.mount(AT(WIDE, 120))
+
+  expect((await ui.find({ type: 'Box', key: 'p1' }))?.props.width).toBe(117)
+  await ui.unmount()
+})
