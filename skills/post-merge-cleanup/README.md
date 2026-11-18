@@ -5,7 +5,8 @@ removes the PR's worktree, then its local branch, then its remote branch,
 for one branch per run, together with that branch's fork sub-branches. It
 checks first that nothing can be lost, shows one summary, and asks once,
 or not at all with `--yes`. With `--dry-run` it shows the summary and
-stops.
+stops. With `--closed`, it also cleans up after a PR closed without
+merging.
 
 ## What it is
 
@@ -15,8 +16,9 @@ stops.
   `<topic-branch>--<role>` sub-branches from `session-sync`, and their
   worktrees, into the same run. A sub-branch named on its own is cleaned
   up alone, even while the topic is still open.
-- **Checks before asking:** the PR is merged, the local tip equals the
-  merged PR head, the worktree is clean, it is not the default branch or
+- **Checks before asking:** the PR is merged (or closed, with `--closed`)
+  and no PR from the branch is still open, the local tip equals the PR
+  head, the worktree is clean, it is not the default branch or
   the main worktree, and no symlinks point into the worktree. Any failure
   stops the run, except in a dry run. A sub-branch has no PR, so it must
   instead be integrated into its topic branch: an ancestor of it, or
@@ -35,6 +37,12 @@ stops.
 - **Skips the prompt with `--yes`** (or `-y`) in your own invocation. The
   checks still run first and still stop the run; the summary is printed
   instead of asked.
+- **Accepts closed PRs with `--closed`** in your own invocation. The
+  newest PR from the branch must be closed without merging, and its head
+  must equal the local tip. The summary marks it "closed, not merged" and
+  lists the commits the default branch lacks. GitHub keeps them under
+  `refs/pull/<n>/head`, so the report adds
+  `git fetch origin pull/<n>/head:<b>` to the undo steps.
 - **Previews with `--dry-run`.** It runs every check, lists every failure
   instead of stopping at the first, and prints the summary headed
   "Dry run: nothing will be removed". Then it stops without asking or
@@ -60,9 +68,11 @@ stops.
 
 ## When not to use
 
-- **The PR is not merged yet,** or there is no PR → not covered; the skill
+- **The PR is still open,** or there is no PR → not covered; the skill
   stops at its first check. Fork sub-branches are the exception: they
   need no PR.
+- **The PR was closed without merging** → add `--closed`; without it the
+  skill stops and suggests the command.
 - **The branch has commits after the merge** → not covered; the skill
   stops and shows both SHAs.
 - **You want every merged branch gone at once** → not covered; run it once
@@ -90,8 +100,9 @@ ln -sfn "$PWD/skills/post-merge-cleanup" ~/.claude/skills/post-merge-cleanup
 
 ### How it loads
 
-- **By description match.** "PR merged", "clean up the branch", "remove
-  the worktree", "delete the merged branch".
+- **By description match.** "PR merged", "PR closed", "clean up the
+  branch", "remove the worktree", "delete the merged branch", "abandoned
+  branch".
 - **"cleanup" and "housekeeping" only in context.** Next to PR, branch,
   merged, or worktree they load it; alone they do not.
 - **By name, always.** `/post-merge-cleanup …` or "use the
@@ -111,6 +122,7 @@ ln -sfn "$PWD/skills/post-merge-cleanup" ~/.claude/skills/post-merge-cleanup
 - **By PR number:** "/post-merge-cleanup 42"
 - **Without a prompt:** `/post-merge-cleanup 42 --yes`
 - **Preview only:** `/post-merge-cleanup 42 --dry-run`
+- **Closed, not merged:** `/post-merge-cleanup 42 --closed`
 - **By worktree path:** "Remove the worktree at
   `~/code/app-login-form`, the PR is merged."
 - **Housekeeping:** "Housekeeping for the merged `fix/typo` branch."
@@ -130,6 +142,13 @@ Gotchas:
 - **Only your own `--yes` counts.** Auto-commit, Auto-PR, "unattended",
   "go ahead" and bypass-permissions mode never imply it, and Claude never
   adds it.
+- **Only your own `--closed` counts.** Claude never adds it, even after a
+  run stopped on a closed PR; it suggests the command for you to type.
+- **A closed PR can't be reopened without its branch.** After the
+  cleanup, GitHub refuses to reopen it until you restore the head branch.
+- **Unmerged commits may be overcounted.** Commits that reached the
+  default branch another way, such as a squash in another PR, still show
+  in the list.
 - **`--dry-run` overrides `--yes`.** With both, nothing is removed, and
   Claude says that `--yes` was ignored. There is no short form such as
   `-n`.

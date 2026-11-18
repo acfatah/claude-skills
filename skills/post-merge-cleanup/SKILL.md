@@ -1,26 +1,27 @@
 ---
 name: post-merge-cleanup
-description: "Clean up after a merged PR: remove its worktree, then its local branch, then its remote branch, after safety checks and one confirmation, or none with `--yes`; `--dry-run` previews and removes nothing. Load when the user says \"PR merged\", \"clean up the branch\", \"remove the worktree\", \"delete the merged branch\", or /post-merge-cleanup. \"cleanup\" and \"housekeeping\" load it only next to PR, branch, merged, or worktree context, never alone. Not for code cleanup."
+description: "Clean up after a merged PR: remove its worktree, then its local branch, then its remote branch, after safety checks and one confirmation, or none with `--yes`; `--dry-run` previews and removes nothing; `--closed` also accepts a PR closed without merging. Load when the user says \"PR merged\", \"PR closed\", \"clean up the branch\", \"remove the worktree\", \"delete the merged branch\", \"abandoned branch\", or /post-merge-cleanup. \"cleanup\" and \"housekeeping\" load it only next to PR, branch, merged, or worktree context, never alone. Not for code cleanup."
 ---
 
-# Post-merge Cleanup v1.5.0
+# Post-merge Cleanup v1.6.0
 
 After a PR merges, the same three things are left behind: its worktree, its
 local branch, and its remote branch. This skill removes them, in that order,
 for **one branch per run**, together with that branch's fork sub-branches.
 It checks first that nothing can be lost, shows one summary, asks once (or
 not at all with `--yes`), then runs every step. With `--dry-run` it stops
-after the summary.
+after the summary. With `--closed`, it also cleans up after a PR that was
+closed without merging.
 
 It never sweeps all merged branches. One run, one branch and its own
 sub-branches.
 
 ## Resolve the target
 
-The input may also carry `--yes` or `-y`, and `--dry-run`, anywhere in the
-arguments. Note each and strip it before resolving the target (see Skip
-the confirmation: `--yes`, and Preview only: `--dry-run`). The rest of the
-input is one of:
+The input may also carry `--yes` or `-y`, `--dry-run`, and `--closed`,
+anywhere in the arguments. Note each and strip it before resolving the
+target (see Skip the confirmation: `--yes`, Preview only: `--dry-run`, and
+Closed PRs: `--closed`). The rest of the input is one of:
 
 - **a branch name;**
 - **a PR number:** take its `headRefName` from
@@ -84,7 +85,7 @@ Run every check before asking anything. Any failure stops the run; report
 which check failed and why. Do not offer a way around it. A `--dry-run`
 runs on past a failure instead; see Preview only: `--dry-run`.
 
-Sub-branches skip **PR merged** and **Nothing unpushed**, and take
+Sub-branches skip **PR merged or closed** and **Nothing unpushed**, and take
 **Integrated into the topic branch** instead. The worktree checks run for
 the worktree of every branch in the run.
 
@@ -96,21 +97,32 @@ path, such as another worktree in the run or `<main>`, runs only after
 `git -C` is fine. A session launched inside `<wt>` has no worktree guard:
 it runs the `git -C` checks directly and skips this early `ExitWorktree`.
 
-- **PR merged.**
+- **PR merged or closed.**
 
-      gh pr list --head <b> --state merged --json number,url,mergedAt,headRefOid
+      gh pr list --head <b> --state all --json number,url,state,mergedAt,closedAt,headRefOid
 
-  Stop if the list is empty, or if `gh` is missing or not logged in. Never
-  fall back to `git branch --merged`: it misses squash and rebase merges.
-  If more than one PR merged from `<b>`, use the newest `mergedAt`.
-- **Nothing unpushed.** The local branch tip must equal the PR's
+  Stop if `gh` is missing or not logged in. Never fall back to
+  `git branch --merged`: it misses squash and rebase merges.
+
+  - **Open PR:** stop if any PR from `<b>` is open, with or without
+    `--closed`. Deleting its head branch would close it.
+  - **No PR:** stop if the list is empty.
+  - **Newest PR:** otherwise, take the PR with the newest `closedAt`; a
+    merged PR has one too. This is the run's PR.
+  - **Merged:** a run's PR in state `MERGED` is the normal case.
+    `--closed` changes nothing.
+  - **Closed, not merged:** a run's PR in state `CLOSED` needs
+    `--closed`. Without it, stop and suggest
+    `/post-merge-cleanup <b> --closed`. With it, go on; see Closed PRs:
+    `--closed`.
+- **Nothing unpushed.** The local branch tip must equal the run's PR's
   `headRefOid`. If the local branch is gone, check the remote branch tip
   from `ls-remote` instead. A different SHA means commits landed after the
-  merge; stop and show both SHAs. This replaces `git branch -d`, which
+  PR; stop and show both SHAs. This replaces `git branch -d`, which
   refuses after a squash or rebase merge.
 - **Integrated into the topic branch** (sub-branches only). `<t>` is the
   topic branch's local tip; for a topic target whose local branch is
-  gone, use its merged PR's `headRefOid`. Check the sub-branch's local
+  gone, use its run's PR's `headRefOid`. Check the sub-branch's local
   tip and, when it was pushed, its remote tip from `ls-remote`, each as
   `<sub>` by its SHA. Fetch a remote tip that is missing locally with
   `git fetch origin <branch>`. A tip passes on the first check that
@@ -191,7 +203,10 @@ Ask with AskUserQuestion, unless the run has `--yes` or `--dry-run` (see
 below): one question, options **Clean up** and **Cancel**. The question
 shows:
 
-- **PR:** number, link, and when it merged;
+- **PR:** number, link, and when it merged; or, with `--closed`, "closed,
+  not merged" and when it closed;
+- **Unmerged commits,** only for a closed PR (see Closed PRs:
+  `--closed`);
 - **Worktree:** the path, or "none";
 - **Local branch:** `<b>` and its tip SHA, or "already gone";
 - **Remote branch:** `origin/<b>`, or "already gone";
@@ -201,7 +216,8 @@ shows:
 - **Warnings:** that the session leaves `<wt>` first, or that it has left
   `<wt>` when a safety check already left it, or, for a session launched
   inside `<wt>`, that it stays and must restart from `<main>`; or the
-  switch of `<main>` to the default branch.
+  switch of `<main>` to the default branch; or, for a closed PR, that
+  GitHub cannot reopen it until its head branch is restored.
 
 With sub-branches, show one row per branch with these fields; a
 sub-branch shows how it is integrated into `<t>` (ancestor or squash)
@@ -258,6 +274,35 @@ with `EnterWorktree path=<wt>`.
 - **Ends** with the command to run for real, such as
   `/post-merge-cleanup <b>`.
 
+## Closed PRs: `--closed`
+
+- **Who sets it:** only the user, by typing `--closed` in their own
+  `/post-merge-cleanup` invocation. Claude never adds it, as with `--yes`,
+  even after a run stopped on a closed PR; it suggests the command
+  instead.
+- **What it allows:** a run's PR in state `CLOSED`, closed without
+  merging. Every other check runs unchanged: no PR from `<b>` may be
+  open, and the tip must still equal the closed PR's `headRefOid`.
+- **Why it is safe:** GitHub keeps a closed PR's commits under
+  `refs/pull/<n>/head` after its branch is deleted, so the work can be
+  fetched back. It is not in the default branch, though.
+- **Unmerged commits:** run `git fetch origin <default>`, and
+  `git fetch origin pull/<n>/head` when `headRefOid` is missing locally.
+  Then list the commits that the default branch lacks, from
+
+      git log --oneline origin/<default>..<headRefOid>
+
+  in the summary: the count, and at most 20 lines, with how many more.
+  Commits that reached the default branch another way, such as a squash
+  in another PR, may still show; say so.
+- **Sub-branches:** a topic target's sub-branches join the run as usual;
+  the closed PR's `headRefOid` stands in for a missing topic tip.
+- **With `--yes`:** allowed, because the user typed both. The printed
+  summary still lists the unmerged commits.
+- **With `--dry-run`:** the dry run wins, as always. A closed PR without
+  `--closed` is listed as a failure, with the command that adds it.
+- **This run only:** never remember it. The next run needs it again.
+
 ## Execute
 
 A `--dry-run` never reaches this section.
@@ -302,6 +347,8 @@ how to undo each part, with the real SHA:
 
 - **Local branch:** `git branch <b> <sha>`
 - **Remote branch:** `git push origin <sha>:refs/heads/<b>`
+- **Closed PR, local SHA lost:** `git fetch origin pull/<n>/head:<b>`
+  restores the local branch from GitHub's copy.
 - **Worktree:** `git worktree add <wt> <b>`, after restoring the local
   branch. The ignored files listed in the summary do not come back.
 
@@ -321,4 +368,7 @@ undo steps do not touch them.
 - **Run any step before the confirmation,** unless the user typed
   `--yes`; never skip a failed check.
 - **Run any step during `--dry-run`,** even with `--yes`.
-- **Remember the confirmation, or `--yes`,** for a later run.
+- **Clean up after a closed, unmerged PR** unless the user typed
+  `--closed`.
+- **Clean up a branch with an open PR,** even with `--closed`.
+- **Remember the confirmation, `--yes`, or `--closed`,** for a later run.
