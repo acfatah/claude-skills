@@ -25,10 +25,18 @@ export interface Skill {
   descLine: number;
 }
 
+export interface Mod {
+  folder: string;
+  // Absent when .claude-plugin/plugin.json is missing; ok is false when it does not parse.
+  manifest?: { name?: unknown; version?: unknown; ok: boolean };
+  commands: string[]; // names its hooks register with $.command.register
+}
+
 export interface Repo {
   root: string;
   skills: Skill[];
   workflows: string[];
+  mods: Mod[];
 }
 
 // Claude Code commands and bundled skills, which no repo folder defines.
@@ -147,7 +155,43 @@ export function discover(root: string): Repo {
     });
   }
   const workflows = subdirs(join(root, "workflows"));
-  return { root, skills, workflows };
+  const mods = subdirs(join(root, "mods")).map((folder) => discoverMod(root, folder));
+  return { root, skills, workflows, mods };
+}
+
+const REGISTER_RE = /command\.register\(\s*\{[^}]*?\bname:\s*['"]([a-z][a-z0-9-]*)['"]/g;
+
+function discoverMod(root: string, folder: string): Mod {
+  const dir = join(root, "mods", folder);
+  let manifest: Mod["manifest"];
+  const json = join(dir, ".claude-plugin", "plugin.json");
+  if (existsSync(json)) {
+    try {
+      const data = JSON.parse(read(json));
+      manifest = data && typeof data === "object" && !Array.isArray(data)
+        ? { name: data.name, version: data.version, ok: true }
+        : { ok: false };
+    } catch {
+      manifest = { ok: false };
+    }
+  }
+  const commands = new Set<string>();
+  for (const file of hookSources(join(dir, "hooks"))) {
+    for (const m of read(file).matchAll(REGISTER_RE)) commands.add(m[1]);
+  }
+  return { folder, manifest, commands: [...commands].sort() };
+}
+
+/** Non-test .ts, .tsx and .js files under a mod's hooks/. */
+function hookSources(dir: string): string[] {
+  if (!isDir(dir)) return [];
+  const out: string[] = [];
+  for (const n of readdirSync(dir).sort()) {
+    const p = join(dir, n);
+    if (isDir(p)) out.push(...hookSources(p));
+    else if (/\.(tsx?|js)$/.test(n) && !/\.(test|spec)\.\w+$/.test(n)) out.push(p);
+  }
+  return out;
 }
 
 /** Markdown files whose references are checked. */
@@ -160,6 +204,7 @@ export function scannedFiles(repo: Repo): string[] {
     files.push(...markdownUnder(repo.root, join("skills", folder, "references")));
   }
   for (const w of repo.workflows) add(join("workflows", w, "README.md"));
+  for (const m of repo.mods) add(join("mods", m.folder, "README.md"));
   add(join("claude", "CLAUDE.md"));
   add("README.md");
   add("CLAUDE.md");
@@ -274,9 +319,42 @@ export function checkWorkflows(repo: Repo): Finding[] {
   return out;
 }
 
+export function checkMods(repo: Repo): Finding[] {
+  const out: Finding[] = [];
+  const table = readmeSection(repo.root, "Mods");
+  for (const m of repo.mods) {
+    const dir = join("mods", m.folder);
+    const json = join(dir, ".claude-plugin", "plugin.json");
+    if (!m.manifest) out.push(err(dir, 0, "mod-files", "no .claude-plugin/plugin.json"));
+    if (!isDir(join(repo.root, dir, "hooks"))) out.push(err(dir, 0, "mod-files", "no hooks/ folder"));
+    if (!existsSync(join(repo.root, dir, "README.md"))) out.push(err(dir, 0, "mod-files", "no README.md"));
+
+    if (m.manifest && !m.manifest.ok) {
+      out.push(err(json, 1, "mod-manifest", "not a JSON object"));
+    } else if (m.manifest) {
+      const { name, version } = m.manifest;
+      if (typeof name !== "string" || !name) {
+        out.push(err(json, 1, "mod-manifest", "no name"));
+      } else if (name !== m.folder) {
+        out.push(err(json, 1, "mod-manifest", `name "${name}" does not match folder "${m.folder}"`));
+      }
+      if (typeof version !== "string" || !version.trim()) {
+        out.push(err(json, 1, "mod-manifest", "no version"));
+      }
+    }
+
+    if (!table) {
+      out.push(err("README.md", 1, "mod-row", `no "## Mods" section to list ${m.folder}`));
+    } else if (!linksTo(table.body, `mods/${m.folder}`)) {
+      out.push(err("README.md", table.start, "mod-row", `Mods table has no row linking mods/${m.folder}`));
+    }
+  }
+  return out;
+}
+
 export function checkReferences(repo: Repo, known: Set<string>): Finding[] {
   const out: Finding[] = [];
-  const commands = new Set([...known, ...repo.workflows]);
+  const commands = new Set([...known, ...repo.workflows, ...repo.mods.flatMap((m) => m.commands)]);
   for (const file of scannedFiles(repo)) {
     const lines = stripFences(read(join(repo.root, file))).map(blankQuotedCode);
     const text = lines.join("\n");
@@ -288,13 +366,13 @@ export function checkReferences(repo: Repo, known: Set<string>): Finding[] {
       out.push(err(file, lineAt(text, m.index!), "unknown-skill", `\`${name}\` skill is not a known skill`));
     }
 
-    // Markdown links into skills/ or workflows/, outside inline code.
+    // Markdown links into skills/, workflows/ or mods/, outside inline code.
     const prose = text.replace(/`[^`\n]*`/g, (s) => " ".repeat(s.length));
     for (const m of prose.matchAll(/\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
       const target = m[1].split("#")[0];
       if (!target || target.includes("://") || target.startsWith("/") || target.startsWith("mailto:")) continue;
       const rel = relative(repo.root, resolve(repo.root, dirname(file), target));
-      if (!/^(skills|workflows)(\/|$)/.test(rel.split(sep).join("/"))) continue;
+      if (!/^(skills|workflows|mods)(\/|$)/.test(rel.split(sep).join("/"))) continue;
       if (!existsSync(join(repo.root, rel))) {
         out.push(err(file, lineAt(prose, m.index!), "broken-link", `link target ${m[1]} does not exist`));
       }
@@ -325,6 +403,7 @@ export function checkReadmeSections(repo: Repo): Finding[] {
   const readmes = [
     ...repo.skills.map((s) => ({ file: join("skills", s.folder, "README.md"), last: "Usage" })),
     ...repo.workflows.map((w) => ({ file: join("workflows", w, "README.md"), last: "Run" })),
+    ...repo.mods.map((m) => ({ file: join("mods", m.folder, "README.md"), last: "Usage" })),
   ];
   for (const { file, last } of readmes) {
     if (!existsSync(join(repo.root, file))) continue;
@@ -385,6 +464,7 @@ export function lint(opts: Options): Finding[] {
   const findings = [
     ...checkSkills(repo),
     ...checkWorkflows(repo),
+    ...checkMods(repo),
     ...checkReferences(repo, knownNames(repo, home)),
     ...checkReadmeSections(repo),
     ...(opts.home ? checkHome(repo, opts.home) : []),

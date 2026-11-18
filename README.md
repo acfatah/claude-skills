@@ -31,7 +31,7 @@ problem‑solving.
 | [commit-messages](skills/commit-messages) | Conventional Commits 1.0.0 for suggested and committed messages: Angular types, optional scope, lowercase description, breaking changes, GitHub-only issue footers and the attribution trailer. PR titles stay free-form unless the repo squash-merges; an explicit repo convention wins. |
 | [handle-pr-comments](skills/handle-pr-comments) | Handle a GitHub PR's review comments, via `gh`: fetch review threads and summaries with a bundled Bun script, verify each claim against the code, triage them in one approved table, fix by theme on the PR's head branch, reply in one approved batch, and resolve fixed threads. Not for doing a review. |
 | [issue-tracker](skills/issue-tracker) | Track issues in local SQLite through a bundled Bun CLI, with triage, milestones, sub-issues, branch links, optional Turso sync between your machines, and promotion to GitHub Issues and Projects. |
-| [lint-skills](skills/lint-skills) | Lint a skills repo with a bundled Bun script: skill names match their folders, cross-skill references and links point at skills that exist, and READMEs, versions and root README rows follow the repo rules. With `--home`, also checks the links in `~/.claude/skills`. |
+| [lint-skills](skills/lint-skills) | Lint a skills repo with a bundled Bun script: skill names match their folders, cross-skill references and links point at skills that exist, and READMEs, versions and root README rows follow the repo rules, for skills, workflows and mods. With `--home`, also checks the links in `~/.claude/skills`. |
 | [plans-and-roadmaps](skills/plans-and-roadmaps) | Rules for plan documents: file location, whether a plan runs in a worktree, which session plans, progress stamps and blocked marks, phase outcomes, state directories, phased plans, wave phases with one commit per parallel step, and multi-session roadmaps. |
 | [post-merge-cleanup](skills/post-merge-cleanup) | After a PR merges, or closes unmerged with `--closed`, remove its worktree, local branch and remote branch, and its fork sub-branches, after safety checks and one confirmation (or none with `--yes`, or a preview only with `--dry-run`), and name any database the worktree leaves behind. |
 | [pr-summary](skills/pr-summary) | Write or update a PR suggestion in `drafts/PR_SUMMARY-<task>.md`: a title, a comprehensive description for reviewers of every commit on the branch, and the attribution line, in an untracked file. Never pushes or runs `gh`; auto-pr opens the PR, in its run mode or on request, and uses it for the PR body. |
@@ -61,6 +61,19 @@ The skills CLI does not install workflows. Each workflow is a single
 file that you download into `~/.claude/workflows/`; its README has the
 command.
 
+## Mods
+
+Claude Code mods: plugins with a hooks module that change Claude Code's own
+interface, such as how replies are drawn, not skills.
+
+| Mod | Description |
+|---|---|
+| [reply-style](mods/reply-style) | Redraw parts of terminal replies in glow's style, each switchable with `/reply-style`: tables get one rule under the header, `│` between columns, no outer box or rules between rows, and inline code in red on grey, for about 25-33% fewer rows per table; bullet lists use `•`, with nested items indented and wrapped lines aligned; headings get glow's `█`, `▌` and `│` prefixes and the rule under `##`; `---` rules are drawn dim. |
+
+The skills CLI does not install mods. Clone the repo and start Claude Code
+with `claude --plugin-dir <clone>/mods/<name>`; each mod's README has the
+details.
+
 ## Requirements
 
 These skills are opinionated, and so is the tooling around them.
@@ -88,6 +101,7 @@ Other software, by skill:
 | curl | readme-badges | Checks each badge image and link |
 | [Turso CLI](https://docs.turso.tech/cli) and account | issue-tracker | Optional, only for sync between your machines |
 | Windows or WSL | windows-screenshots | Plus the `SCREENSHOTS` variable; see its README |
+| Claude Code 2.1.326 or later | reply-style | The mod API is early access |
 
 - **Gotcha:** promoting issues to a GitHub Project needs an extra scope:
   run `gh auth refresh -s project` once.
@@ -134,6 +148,13 @@ workflows/
     ├── <name>.js    Claude Code workflow script; the one file you
     |                download
     └── README.md    install, usage, and background
+mods/
+└── <name>/
+    ├── .claude-plugin/
+    |   └── plugin.json  mod manifest; its `version` is the mod's version
+    ├── hooks/       hooks module, its tests, and the code it uses
+    ├── bench/       optional - benchmarks, run with Bun
+    └── README.md    install, usage, and checks
 skills/
 └── <skill-name>/
     ├── SKILL.md     required - frontmatter `name` must match the folder
@@ -145,8 +166,8 @@ skills/
     └── test/        optional - tests for those scripts
 ```
 
-Every skill and workflow `README.md` uses the same sections: What it
-is, What it is not, When not to use, Install, and Usage (Run, for a
+Every skill, workflow and mod `README.md` uses the same sections: What
+it is, What it is not, When not to use, Install, and Usage (Run, for a
 workflow) with example prompts.
 
 ## Versioning
@@ -169,6 +190,7 @@ git log --oneline -- skills/windows-screenshots
 
 Workflows follow the same single-place rule. A workflow's version is
 the `VERSION` constant in its `.js` file, the one file users install.
+A mod's version is `version` in its `.claude-plugin/plugin.json`.
 
 ## Claude Code instructions
 
@@ -185,6 +207,10 @@ ln -sfn "$PWD/claude/CLAUDE.md" ~/.claude/CLAUDE.md
 ```
 
 This replaces any existing `~/.claude/CLAUDE.md`, so back that up first.
+
+Its replies use plain markdown headings and `---` rules. The
+[`reply-style`](mods/reply-style) mod draws them in the glow style in the
+terminal; without it they show as the terminal's own headings.
 
 For plan documents, phased plans and the roadmap workflow, see the
 [`plans-and-roadmaps`](skills/plans-and-roadmaps) skill. To let Claude

@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { parseFrontmatter, run, stripFences } from "../scripts/lint.ts";
@@ -157,6 +157,85 @@ describe("workflow checks", () => {
     const root = cleanRepo();
     write(root, "README.md", "## Skills\n\n[a](skills/alpha) [b](skills/beta)\n\n## Workflows\n\nnone\n");
     expect(lint(root).stdout).toContain("[workflow-row]  Workflows table has no row linking workflows/flow");
+  });
+});
+
+/** A clean repo plus one mod that registers /tint. */
+function modRepo(): string {
+  const root = cleanRepo();
+  write(root, "mods/tint/.claude-plugin/plugin.json", `{ "name": "tint", "version": "0.1.0" }\n`);
+  write(root, "mods/tint/hooks/register.tsx", `on("session.start", async ($) => {\n  await $.command.register({\n    name: 'tint',\n    description: 'x',\n  })\n})\n`);
+  write(root, "mods/tint/hooks/register.test.tsx", `$.command.register({ name: 'test-only' })\n`);
+  write(root, "mods/tint/README.md", `# tint\n\nRun /tint.\n\n${README_BODY}`);
+  const readme = readFileSync(join(root, "README.md"), "utf8");
+  write(root, "README.md", `${readme}\n## Mods\n\n| [tint](mods/tint) |\n`);
+  return root;
+}
+
+describe("mod checks", () => {
+  test("a clean mod gives no findings", () => {
+    expect(lint(modRepo()).stdout).toBe("0 errors, 0 warnings\n");
+  });
+
+  test("mod-files", () => {
+    const root = modRepo();
+    rmSync(join(root, "mods/tint/.claude-plugin"), { recursive: true });
+    rmSync(join(root, "mods/tint/hooks"), { recursive: true });
+    rmSync(join(root, "mods/tint/README.md"));
+    const r = lint(root);
+    expect(r.code).toBe(1);
+    expect(r.stdout).toContain("mods/tint  [mod-files]  no .claude-plugin/plugin.json");
+    expect(r.stdout).toContain("mods/tint  [mod-files]  no hooks/ folder");
+    expect(r.stdout).toContain("mods/tint  [mod-files]  no README.md");
+    expect(codes(r.stdout)).toEqual(["mod-files", "mod-files", "mod-files"]);
+  });
+
+  test("mod-manifest: bad JSON", () => {
+    const root = modRepo();
+    write(root, "mods/tint/.claude-plugin/plugin.json", "{ name: tint }\n");
+    expect(lint(root).stdout).toContain("mods/tint/.claude-plugin/plugin.json:1  [mod-manifest]  not a JSON object");
+  });
+
+  test("mod-manifest: name mismatch and missing version", () => {
+    const root = modRepo();
+    write(root, "mods/tint/.claude-plugin/plugin.json", `{ "name": "tinted" }\n`);
+    const r = lint(root);
+    expect(r.stdout).toContain('[mod-manifest]  name "tinted" does not match folder "tint"');
+    expect(r.stdout).toContain("[mod-manifest]  no version");
+    expect(codes(r.stdout)).toEqual(["mod-manifest", "mod-manifest"]);
+  });
+
+  test("mod-row", () => {
+    const root = cleanRepo();
+    const readme = readFileSync(join(root, "README.md"), "utf8");
+    cpSync(join(modRepo(), "mods"), join(root, "mods"), { recursive: true });
+    write(root, "README.md", readme);
+    expect(lint(root).stdout).toContain('README.md:1  [mod-row]  no "## Mods" section to list tint');
+    write(root, "README.md", `${readme}\n## Mods\n\nnone\n`);
+    expect(lint(root).stdout).toContain("[mod-row]  Mods table has no row linking mods/tint");
+  });
+
+  test("registered commands are known; test files do not count", () => {
+    const root = modRepo();
+    addSkill(root, "alpha", { body: "Run /tint, not /test-only." });
+    const r = lint(root);
+    expect(r.stdout).toContain("[unknown-command]  /test-only");
+    expect(r.stdout).not.toContain("/tint ");
+    expect(codes(r.stdout)).toEqual(["unknown-command"]);
+  });
+
+  test("broken-link into mods/", () => {
+    const root = modRepo();
+    write(root, "skills/beta/README.md", `# beta\n\nSee [gone](../../mods/gone) and [ok](../../mods/tint).\n\n${README_BODY}`);
+    const r = lint(root);
+    expect(r.stdout).toContain("skills/beta/README.md:3  [broken-link]  link target ../../mods/gone does not exist");
+    expect(codes(r.stdout)).toEqual(["broken-link"]);
+  });
+
+  test("mod READMEs get readme-sections", () => {
+    const root = modRepo();
+    write(root, "mods/tint/README.md", `# tint\n\n${README_BODY.replace("## Usage", "")}`);
+    expect(lint(root).stdout).toContain('mods/tint/README.md:1  [readme-sections]  no "## Usage" section');
   });
 });
 

@@ -7,19 +7,10 @@ paragraphs are hard to follow. Optimize for scanning, not just brevity:
 - Short chunks: paragraphs of 1–3 sentences; prefer bullets and
   headings over prose.
 - Bold the key word or action in a bullet, so skimming works.
-- Mark headings so they stand apart from paragraphs, matching the glow
-  style in `~/.config/nvim/glow-style.json`:
-  - **Top level:** a bold line ending in a backslash, `**█ Title**\`,
-    then on the very next line a line of exactly 75 `─` characters
-    (U+2500), then a blank line. Not a `##` heading: the terminal
-    puts a gap under headings, which would split the title from its
-    rule. The `\` keeps the rule on its own line. Use `─`, never `-`:
-    `---` under text makes a setext heading.
-  - **Subsection:** `### ▌ Title`.
-  - **Third level**, rarely: `#### │ Title`.
-  - **Blank line** before every heading. This applies to chat replies
-    only; documents keep plain `#` headings, since glow adds the
-    glyphs itself.
+- Use plain markdown headings: `##` for the top level, `###` for a
+  subsection, and `####`, rarely, for a third level, with a blank line
+  before each. The `reply-style` mod in this repo draws them in the
+  glow style; without it they show as the terminal's own headings.
 - Plain, complete sentences. No cryptic shorthand or dropped words
   that make me decode.
 - Cut filler, recaps, and restating my question.
@@ -29,7 +20,7 @@ paragraphs are hard to follow. Optimize for scanning, not just brevity:
   give a recommendation.
 - Put caveats inline, next to the claim they limit.
 - When a reply names an opaque reference without its title, end the
-  reply with a `### ▌ References` section that gives each one its
+  reply with a `### References` section that gives each one its
   title. An opaque reference is anything I can't read at a glance:
   issue ids (`0037`), PR or GitHub issue numbers (`#36`), commit
   hashes, UUIDs, reference codes. Format it like this:
@@ -44,9 +35,10 @@ paragraphs are hard to follow. Optimize for scanning, not just brevity:
     for this section.
   - **Skip** ids whose title already sits next to them in the reply.
     This applies to chat replies only.
-  - **Rule it off**: put a line of exactly 75 `╌` characters (U+254C)
-    on its own line, with a blank line before it and the References
-    heading on the very next line, with no blank line between them.
+  - **Rule it off**: put `---` on its own line, with a blank line
+    before it, since `---` right under text turns that text into a
+    heading. Put the References heading on the very next line, with no
+    blank line between them.
 
 What these terms mean:
 
