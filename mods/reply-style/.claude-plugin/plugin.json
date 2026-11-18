@@ -1,6 +1,6 @@
 {
   "name": "reply-style",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Draw Claude's terminal replies in glow's style: compact tables, • bullets, glow-shaped headings, and dim rules",
   "author": {
     "name": "Achmad F. Ibrahim"
