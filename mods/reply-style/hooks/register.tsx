@@ -204,8 +204,10 @@ export const register: Register = on => {
     totalMs += ms
     maxMs = Math.max(maxMs, ms)
 
+    // The engine's reply keeps a blank line above every block, under a tool
+    // row or the prompt; a rewrite replaces it, so the mod draws its own.
     return (
-      <Box flexDirection="row">
+      <Box key="reply" flexDirection="row" marginTop={1}>
         <Box width={BULLET} flexShrink={0}>
           <Text>{e.props.isFirstOfReply ? '● ' : '  '}</Text>
         </Box>

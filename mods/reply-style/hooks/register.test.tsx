@@ -92,3 +92,13 @@ test('bullets are drawn as •, nested ones too, with their text as markdown', a
   expect(await ui.find({ text: /^- / })).toBeUndefined()
   await ui.unmount()
 })
+
+test('a drawn reply keeps a blank line above it, as the engine draws one', async $ => {
+  const first = await $.ui.mount(MSG('## Top\n\nText.'))
+  expect((await first.find({ type: 'Box', key: 'reply' }))?.props.marginTop).toBe(1)
+  await first.unmount()
+
+  const later = await $.ui.mount({ ...MSG('## Top\n\nText.'), props: { text: '## Top\n\nText.', isFirstOfReply: false } })
+  expect((await later.find({ type: 'Box', key: 'reply' }))?.props.marginTop).toBe(1)
+  await later.unmount()
+})
