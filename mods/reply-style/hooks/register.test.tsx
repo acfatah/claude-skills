@@ -132,6 +132,21 @@ test('a bullet item caps its prose at the same right edge', async $ => {
   await ui.unmount()
 })
 
+test('a reply with only a quote is drawn, with its prose capped', async $ => {
+  const ui = await $.ui.mount(AT('> A quote long enough to need a wrap.\n> - with a list in it', 120))
+
+  expect((await ui.find({ type: 'Box', key: 'p0' }))?.props.width).toBe(75)
+  await ui.unmount()
+})
+
+test('with width off, a reply with only a quote is left to the engine', async $ => {
+  await $.command.run({ command: 'reply-style', args: 'width off' })
+  const ui = await $.ui.mount(AT('> A quote.', 120))
+
+  expect(await ui.find({ type: 'Box', key: 'p0' })).toBeUndefined()
+  await ui.unmount()
+})
+
 test('with width off, prose is as wide as the available width', async $ => {
   await $.command.run({ command: 'reply-style', args: 'width off' })
   const ui = await $.ui.mount(AT(WIDE, 120))
