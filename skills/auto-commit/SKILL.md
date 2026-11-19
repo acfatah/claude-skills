@@ -3,7 +3,7 @@ name: auto-commit
 description: "Opt-in Auto-commit mode: ask once, then commit each finished logical change with its suggested message and continue, stopping on gaps or failures. Load before approving or executing a plan, before a phased plan or roadmap phase, when the user asks for two or more distinct changes, or when the user says \"auto-commit\", \"unattended\", \"run it all\", \"commit as you go\", or \"don't stop between phases\"."
 ---
 
-# Auto-commit v1.6.0
+# Auto-commit v1.7.0
 
 By default Claude never commits unless asked: it finishes a logical change,
 suggests a commit message, and waits. That is **Pause** mode. **Auto-commit**
@@ -149,6 +149,13 @@ When unsure whether a gap is soft or hard, treat it as hard.
 
 Whenever the run stops or ends, report:
 
+- **Position,** as the report's first line, in bold:
+  - **With a plan:** the progress line from the `plans-and-roadmaps`
+    skill's Progress line, with what it points at:
+    `**Phase 2/3** done; next **Phase 3/3 · Step 1/4**: Add tests`.
+  - **Without a plan:** count the changes the user asked for, in the
+    order they asked: `**Change 2/3** done; next **Change 3/3**: <what>`.
+  - **At the finish:** `**Phase 3/3** done` or `**Change 3/3** done`.
 - **Commits:** short SHA and subject of each.
 - **Undo:** `git reset --soft <base>`, with the real SHA the run started
   from. It drops the run's commits and keeps their changes staged. After
