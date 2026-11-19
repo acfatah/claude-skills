@@ -2,7 +2,7 @@ import type { Register } from 'claude-code'
 
 import { FEATURES, parse, USAGE } from './command'
 import type { Feature } from './command'
-import { mayHold, segment } from './segment'
+import { mayHold, segment, worthDrawing } from './segment'
 import type { Item, Segment } from './segment'
 import { boxedRows, layout, spans } from './table'
 import type { Line } from './table'
@@ -84,7 +84,7 @@ export const register: Register = on => {
 
     const started = Date.now()
     const parts = segment(text, isOn)
-    if (parts.every(p => p.kind === 'markdown' || p.kind === 'code')) return next(e)
+    if (!worthDrawing(parts, isOn)) return next(e)
 
     const { Box, Text, Markdown } = $.ui.resolve(e)
 

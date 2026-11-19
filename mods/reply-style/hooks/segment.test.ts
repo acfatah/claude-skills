@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { mayHold, segment } from './segment'
+import { mayHold, segment, worthDrawing } from './segment'
 
 const ALL = { tables: true, bullets: true, headings: true, rules: true }
 const ONLY = (on: Partial<typeof ALL>) => ({ tables: false, bullets: false, headings: false, rules: false, ...on })
@@ -113,4 +113,14 @@ test('a fence in an item stays in it; splitting the body yields a code part', ()
 test('a fence inside an ordered item stays with it', () => {
   expect(kinds('1. Step\n\n   ```\n   ls\n   ```\n2. Next')).toEqual(['markdown'])
   expect(kinds('1. Step\n\n```\nls\n```')).toEqual(['markdown', 'code'])
+})
+
+test('a quote is worth drawing only with width on, and never in code', () => {
+  const W = { ...ALL, width: true }
+  expect(mayHold('> quoted', W)).toBe(true)
+  expect(mayHold('> quoted', ALL)).toBe(false)
+  expect(worthDrawing(segment('Intro.\n\n> quoted', W), W)).toBe(true)
+  expect(worthDrawing(segment('Intro.\n\n> quoted', ALL), ALL)).toBe(false)
+  expect(worthDrawing(segment('```\n> not a quote\n```', W), W)).toBe(false)
+  expect(worthDrawing(segment('a > b, inline', W), W)).toBe(false)
 })

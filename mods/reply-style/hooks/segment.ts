@@ -19,7 +19,9 @@ export type Segment =
   | { kind: 'heading'; level: number; text: string; blankBefore: boolean }
   | { kind: 'rule'; text: string; blankBefore: boolean }
 
-export type Parts = { tables: boolean; bullets: boolean; headings: boolean; rules: boolean }
+// `width`: a quote is a reason to draw a reply, so its prose gets the cap;
+// the engine draws the quote itself.
+export type Parts = { tables: boolean; bullets: boolean; headings: boolean; rules: boolean; width?: boolean }
 
 const SEPARATOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/
 const FENCE = /^\s*(```|~~~)/
@@ -32,6 +34,9 @@ const HEADING = /^ {0,3}(#{1,6})(?:[ \t]+(.*?))?(?:[ \t]+#+)?[ \t]*$/
 const SETEXT = /^ {0,3}-+ *$/
 // Lines that start a block of their own, so they never continue an item.
 const BLOCK = /^ {0,3}(#{1,6}(\s|$)|>|```|~~~|\|)/
+
+// A blockquote line, as CommonMark starts one.
+const QUOTE = /^ {0,3}>/m
 
 const isBlank = (line: string) => line.trim() === ''
 const isRow = (line: string) => line.trim().startsWith('|')
@@ -222,4 +227,11 @@ export const mayHold = (text: string, parts: Parts) =>
   (parts.tables && text.includes('|')) ||
   (parts.bullets && /^ {0,3}[-*+] /m.test(text)) ||
   (parts.headings && /^ {0,3}#{1,6}([ \t]|$)/m.test(text)) ||
-  (parts.rules && /^ {0,3}([-*_])( *\1){2,} *$/m.test(text))
+  (parts.rules && /^ {0,3}([-*_])( *\1){2,} *$/m.test(text)) ||
+  (parts.width === true && QUOTE.test(text))
+
+// Whether the parts are worth drawing: a part the mod draws, or, with
+// `width` on, a quote in the markdown, so its lines wrap at the cap.
+export const worthDrawing = (all: Segment[], parts: Parts) =>
+  all.some(p => p.kind !== 'markdown' && p.kind !== 'code') ||
+  (parts.width === true && all.some(p => p.kind === 'markdown' && QUOTE.test(p.text)))

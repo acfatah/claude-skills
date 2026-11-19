@@ -19,7 +19,8 @@ feature you can turn on or off on its own:
   text column, as in replies the built-in renderer draws, or at the
   terminal's width when that is narrower. Paragraphs, bullet text,
   headings, quotes and ordered lists are capped; code blocks and tables
-  keep the full width.
+  keep the full width. A reply with a quote is always drawn, so the quote
+  is capped even when nothing else in the reply changes.
 
 Replies the mod has nothing to change in are left to the built-in renderer.
 
@@ -257,8 +258,10 @@ Gotchas:
 - **The cap follows the terminal on resize.** A width change redraws the
   reply once the resize settles, so the prose rewraps at the new width.
 - **The cap is the mod's only in replies it draws.** A reply with nothing
-  for the mod to change goes to the built-in renderer, so its prose
-  follows that renderer's own width.
+  for the mod to change, and no quote, goes to the built-in renderer, so
+  its prose follows that renderer's own width.
+- **Quotes are still the built-in renderer's.** The mod only caps their
+  width; the built-in renderer draws the `>` bar and the text inside.
 - **Code inside an ordered item is capped.** A fence indented under a
   `1.` item stays with that item's prose, so it wraps at 75 columns too.
 - **Task items are plain items.** `- [ ] task` draws as `•` followed by
