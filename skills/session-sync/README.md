@@ -12,7 +12,8 @@ a break gets only a recap, checked against the repo.
 - **Recaps from the repo, not the transcript.** On "outline progress" or
   "catch up", it checks `git status`, recent commits, the upstream, the
   plan and the tests first. The recap has a fixed shape: Goal, Plan
-  (steps done, blocked and next, when a plan exists), Issues, Done, In
+  (the next step's progress line, such as **Phase 2/3 · Step 3/5**,
+  then steps done and blocked, when a plan exists), Issues, Done, In
   progress, Drift, Waiting on me, Next step.
 - **Names the session's issues** on the Issues line, when the
   [`issue-tracker`](../issue-tracker) skill and an issues database are

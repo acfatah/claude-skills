@@ -3,7 +3,7 @@ name: plans-and-roadmaps
 description: "Rules for plan documents and roadmaps: where plan files live, whether a plan runs in a worktree, which session a plan is written in, progress stamps, state directories, phased plans, multi-session roadmaps. Load before writing, executing, stamping, or moving a plan: the plan-mode file, any .md under .claude/plans/, or a PLAN*.md / TODO.md being executed. Also load to resume a paused or shelved plan, or to list plans by state."
 ---
 
-# Plans and Roadmaps v1.19.0
+# Plans and Roadmaps v1.20.0
 
 These rules apply to the plan-mode plan file, any `.md` under a
 `.claude/plans/` directory, and any `PLAN*.md` or `TODO.md` you are executing
@@ -561,6 +561,42 @@ question after the title, with the time from `date`:
   Auto-commit runs; in Pause, stop and ask.
 - **Stopping with blocked steps** leaves the plan at the top level; it is
   not complete.
+
+### Progress line
+
+A step ID alone, such as `Step 2.3`, says nothing about how much is done
+and how much is left. So every chat message that starts a step, and every
+stop, opens with a bold progress line: position over total, outer level
+first.
+
+    **Phase 2/3 · Step 3/5**: Route callers through it
+
+- **Flat plan:** `**Step 3/5**: <title>`.
+- **Phased plan or roadmap:** `**Phase 2/3 · Step 3/5**: <title>`. In a
+  roadmap the phase counts `roadmap.md`'s phases, and the step counts
+  the current phase plan's steps.
+- **When to show it:** when starting a step, and at every stop: a phase
+  boundary, a blocked step, and the finish. At a stop, say what the
+  numbers point at: `**Phase 2/3** done; next **Phase 3/3 · Step 1/4**:
+  Add tests`.
+- **Count from the live headings,** re-read from the plan file each time,
+  never from memory. Leave dropped (struck-through) phases and steps out
+  of both the position and the total.
+- **Positions, not IDs.** The step count is the position within its
+  phase, so `Step 2.3` shows as `Step 3/5`, never `Step 2.3/5`. Normally
+  the position equals the ID's last number.
+- **Add the ID only when it differs** from the position, after an
+  inserted or dropped item: with headings `1, 2, 2a, ~~3~~, 4`, Phase 2a
+  shows as `**Phase 3/4 (2a)**`. An inserted step shows as
+  `**Step 4/6 (2.3a)**`.
+- **The current item** is the step being worked on; at a stop, the next
+  open one. Blocked steps count as open, not done.
+- **No step total yet:** a roadmap phase whose phase plan is not written
+  shows only `**Phase 2/4**`.
+- **Wave phases** run their steps side by side, so they show a done count
+  instead: `**Phase 2/3 · wave, 2/5 steps done**`.
+- **Never write the line into the plan file.** A total in a heading goes
+  stale as soon as a phase is inserted; it lives only in chat.
 
 ## Plan states
 

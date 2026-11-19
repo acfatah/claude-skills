@@ -34,8 +34,9 @@ that removes those round trips.
   Pushing and draft PRs come only with Auto-PR, via `auto-pr`.
 - **Sorts gaps** into soft (default chosen and recorded), hard (task parked,
   dependents blocked) and unsafe (stop).
-- **Ends every run with a report:** commits, the undo command, defaults
-  chosen, and any blocking question.
+- **Ends every run with a report:** where the run stands, such as
+  **Phase 2/3** done or **Change 2/3** done, then commits, the undo
+  command, defaults chosen, and any blocking question.
 
 ## What it is not
 

@@ -12,6 +12,9 @@ split into phased plans and multi-session roadmaps.
   file. Links work the same wherever `plansDirectory` puts the file.
 - **Stamps finished steps** with a real timestamp from `date`, and marks
   a step that waits on your answer with `⛔ … Blocked: <question>`.
+- **Opens each step and stop with a progress line,** such as
+  **Phase 2/3 · Step 3/5**, counted from the plan's live headings, so
+  you always see how much is done and how much is left.
 - **Writes a phase outcome** after each phase of a phased plan: what
   changed, deviations and new decisions, so a later session can resume
   without the old chat.
@@ -144,7 +147,8 @@ ln -sfn "$PWD/skills/plans-and-roadmaps" ~/.claude/skills/plans-and-roadmaps
   mode.
 - **Roadmap:** "Make a roadmap for moving to Postgres." / "Plan phase 2
   of .claude/plans/postgres/roadmap.md."
-- **Run:** "Implement the plan." Claude stamps each step as it finishes.
+- **Run:** "Implement the plan." Claude stamps each step as it finishes
+  and opens each one with its progress line.
 - **Worktree:** pick "Worktree from origin/main" or "Worktree from HEAD"
   at approval. Claude creates `worktree-<topic>` (built-in) or
   `feat/<topic>` (git) under `.claude/worktrees/` and works there.
