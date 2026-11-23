@@ -3,7 +3,7 @@ name: auto-commit
 description: "Opt-in Auto-commit mode: ask once, then commit each finished logical change with its suggested message and continue, stopping on gaps or failures. Load before approving or executing a plan, before a phased plan or roadmap phase, when the user asks for two or more distinct changes, or when the user says \"auto-commit\", \"unattended\", \"run it all\", \"commit as you go\", or \"don't stop between phases\"."
 ---
 
-# Auto-commit v1.7.0
+# Auto-commit v1.8.0
 
 By default Claude never commits unless asked: it finishes a logical change,
 suggests a commit message, and waits. That is **Pause** mode. **Auto-commit**
@@ -50,13 +50,14 @@ halting it later.
 ## Recording the choice
 
 - **In a plan,** write the choice as a line under the title, below any stop
-  line the plan already has:
+  line the plan already has, with a lone `>` line between them (see
+  `plans-and-roadmaps`, Header lines):
 
-      > Run mode: Auto-commit. Commit each phase with its message and continue; stop on any gap. See the auto-commit skill.
+      > **Run mode:** Auto-commit. Commit each phase with its message and continue; stop on any gap. See the auto-commit skill.
 
   The line survives a "clear context" approval, which starts work from the
-  plan alone. Write `> Run mode: Pause.` when the user picks Pause, or leave
-  the line out; a plan without one runs in Pause.
+  plan alone. Write `> **Run mode:** Pause.` when the user picks Pause, or
+  leave the line out; a plan without one runs in Pause.
 - **Without a plan,** the choice lasts for this session only.
 - **Never save it to memory.** Each plan or session asks again.
 - **Never infer it.** Bypass-permissions mode, "proceed" and "go ahead" are
