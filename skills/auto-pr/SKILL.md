@@ -3,7 +3,7 @@ name: auto-pr
 description: "Opt-in Auto-PR run mode: commit each change as Auto-commit does, then push the branch to its upstream and open or update a draft PR after a clean finish. Also covers a one-off request to push and open a PR for finished work. Load when the user picks Auto-PR in the auto-commit run-mode question, when a plan's run-mode line says Auto-PR, or when the user says \"auto-PR\", \"open a PR when done\", \"open a PR\", \"create a PR\", or \"push and open a PR\". Depends on the auto-commit skill for the commit loop."
 ---
 
-# Auto-PR v1.7.0
+# Auto-PR v1.8.0
 
 ## What it adds to Auto-commit
 
@@ -96,15 +96,16 @@ Keep any upstream wording in both labels.
 
 ## Recording the choice
 
-In a plan, write the choice under the title, below any stop line. It
+In a plan, write the choice under the title, below any stop line, with a
+lone `>` line between them (see `plans-and-roadmaps`, Header lines). It
 records three things, in this order: the upstream from `@{u}`, the PR
 base, and the summary file.
 
-    > Run mode: Auto-PR (upstream: origin/<branch>; base: <base>; summary: drafts/PR_SUMMARY-<task>.md). Commit each phase, then push and open or update a draft PR after a clean finish; stop on any gap. See the auto-pr skill.
+    > **Run mode:** Auto-PR (upstream: origin/<branch>; base: <base>; summary: drafts/PR_SUMMARY-<task>.md). Commit each phase, then push and open or update a draft PR after a clean finish; stop on any gap. See the auto-pr skill.
 
 On the no-upstream path, the upstream adds a `to create` marker:
 
-    > Run mode: Auto-PR (upstream: origin/<branch>, to create; base: <base>; summary: drafts/PR_SUMMARY-<task>.md). Commit each phase, then push and open or update a draft PR after a clean finish; stop on any gap. See the auto-pr skill.
+    > **Run mode:** Auto-PR (upstream: origin/<branch>, to create; base: <base>; summary: drafts/PR_SUMMARY-<task>.md). Commit each phase, then push and open or update a draft PR after a clean finish; stop on any gap. See the auto-pr skill.
 
 For a ready PR, the line also records the answer, after the summary, e.g.
 `(upstream: origin/<branch>; base: main; summary: drafts/PR_SUMMARY-<task>.md; ready PR #n: replace)`

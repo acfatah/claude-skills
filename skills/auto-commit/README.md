@@ -133,7 +133,7 @@ ln -sfn "$PWD/skills/auto-commit" ~/.claude/skills/auto-commit
 2. **Choose the mode.** Before approval, Claude asks "Pause or Auto-commit?"
    along with any open questions. Pick Auto-commit.
 3. **Approve.** The plan gains
-   `> Run mode: Auto-commit. Commit each phase …` under its title.
+   `> **Run mode:** Auto-commit. Commit each phase …` under its title.
 4. **Let it run.** Claude creates a topic branch, commits Phase 1, commits
    Phase 2, and reports both SHAs with `git reset --soft <base>` to undo.
 

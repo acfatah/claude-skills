@@ -123,7 +123,7 @@ It also needs the [GitHub CLI](https://cli.github.com), signed in with
 1. **Prepare the branch.** Create a topic branch.
 2. **Plan the work.** In plan mode, ask for a two-phase change.
 3. **Choose the mode.** Before approval, pick Auto-PR. The plan gains
-   `> Run mode: Auto-PR (upstream: origin/<branch>, to create; base: main; summary: drafts/PR_SUMMARY-<task>.md) …`
+   `> **Run mode:** Auto-PR (upstream: origin/<branch>, to create; base: main; summary: drafts/PR_SUMMARY-<task>.md) …`
    under its title.
 4. **Let it run.** Claude commits Phase 1 and Phase 2. At the clean
    finish it re-checks the upstream, writes the recorded summary file

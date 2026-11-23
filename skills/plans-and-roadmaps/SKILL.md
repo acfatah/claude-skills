@@ -3,7 +3,7 @@ name: plans-and-roadmaps
 description: "Rules for plan documents and roadmaps: where plan files live, whether a plan runs in a worktree, which session a plan is written in, progress stamps, state directories, phased plans, multi-session roadmaps. Load before writing, executing, stamping, or moving a plan: the plan-mode file, any .md under .claude/plans/, or a PLAN*.md / TODO.md being executed. Also load to resume a paused or shelved plan, or to list plans by state."
 ---
 
-# Plans and Roadmaps v1.20.0
+# Plans and Roadmaps v1.21.0
 
 These rules apply to the plan-mode plan file, any `.md` under a
 `.claude/plans/` directory, and any `PLAN*.md` or `TODO.md` you are executing
@@ -79,6 +79,34 @@ copied instead; see Roadmap plans). Never overwrite what is already there:
   (see Check the link first).
 - A project `CLAUDE.md` may pin the exact destination directory. Where one
   does, it wins over this section.
+
+## Header lines
+
+Lines under a plan's title, such as the stop line, the run-mode line and
+the `> Worktree:` line, form one blockquote. The approval dialog shows it
+first, so format it for reading:
+
+- **Bold the label:** the leading words that name the line, with their
+  colon, as in `> **Run mode:** Auto-commit. …`. A label that runs on to
+  a path bolds only its name: `> **Roadmap phase N** of <path>: …`.
+  State lines such as `> Completed 2026-09-30 14:02.` have no label and
+  stay plain.
+- **A lone `>` between lines,** so each starts on its own line:
+
+      > **Phased plan:** stop after each phase, write its outcome, show its commit message, and wait. Plan file: ~/.claude/plans/<slug>.md
+      >
+      > **Run mode:** Auto-commit. Commit each phase with its message and continue; stop on any gap. See the auto-commit skill.
+      >
+      > **Worktree:** none.
+
+  Without it, Markdown joins the lines into one paragraph. Never use
+  `<br>`, which the terminal may show as text, or trailing spaces or a
+  trailing backslash, which editors strip and renderers treat differently.
+- **One line each.** Never wrap a header line; the label must open it.
+- **Reading:** a skill that names a line, such as `> Run mode:`, means the
+  line with that label, bold or not. Older plans have plain labels and no
+  separators; leave them as they are, and use this format for any line
+  you add or rewrite.
 
 ## Worktrees
 
@@ -224,10 +252,10 @@ uncommitted changes. Untracked files count; ignored files do not.
 line and the run-mode line. Write `none` too, so execution does not ask
 again:
 
-    > Worktree: feat/<topic> from <sha> at <main>/.claude/worktrees/<topic>; carry: copy. Create it if missing, then EnterWorktree with path. See the plans-and-roadmaps skill.
-    > Worktree: feat/<topic> from origin/dev at <main>/.claude/worktrees/<topic>; carry: leave. Create it if missing, then EnterWorktree with path. See the plans-and-roadmaps skill.
-    > Worktree: built-in worktree-<topic> from origin/main at <main>/.claude/worktrees/<topic>; carry: leave. EnterWorktree name=<topic>, or path= if it exists. See the plans-and-roadmaps skill.
-    > Worktree: none.
+    > **Worktree:** feat/<topic> from <sha> at <main>/.claude/worktrees/<topic>; carry: copy. Create it if missing, then EnterWorktree with path. See the plans-and-roadmaps skill.
+    > **Worktree:** feat/<topic> from origin/dev at <main>/.claude/worktrees/<topic>; carry: leave. Create it if missing, then EnterWorktree with path. See the plans-and-roadmaps skill.
+    > **Worktree:** built-in worktree-<topic> from origin/main at <main>/.claude/worktrees/<topic>; carry: leave. EnterWorktree name=<topic>, or path= if it exists. See the plans-and-roadmaps skill.
+    > **Worktree:** none.
 
 `<sha>` is the HEAD at approval, `<main>` the absolute main-checkout path,
 and `carry` is `leave`, `copy` or `move`. A remote base is recorded as its
@@ -503,7 +531,7 @@ already has it.
 - **Already in plan mode** when this shows up: plan mode can only write
   the plan file, so write the brief there, under this stop line:
 
-      > Handoff brief: do not execute here. After approval, copy it to <brief path> and give the launch command.
+      > **Handoff brief:** do not execute here. After approval, copy it to <brief path> and give the launch command.
 
   Then call ExitPlanMode, and after approval do only that.
 - **In the new session:** read the brief and confirm the tool is loaded.
@@ -776,11 +804,11 @@ A plan with phases gets one commit per phase:
   carries this line under its title, with the real plan-mode path (a
   roadmap and its phase plans use their own lines; see Roadmap plans):
 
-      > Phased plan: stop after each phase, write its outcome, show its commit message, and wait. Plan file: ~/.claude/plans/<slug>.md
+      > **Phased plan:** stop after each phase, write its outcome, show its commit message, and wait. Plan file: ~/.claude/plans/<slug>.md
 
   The line stays true for the plan's whole life; never remove it. The
   run-mode line and the `> Worktree:` line (see Worktrees) follow it, in
-  that order.
+  that order, formatted as Header lines says.
 - Move the plan to `completed/` only when every phase is stamped.
 
 Handle these cases:
@@ -815,7 +843,7 @@ commits each step on its own. Use it for independent changes, such as one
 fix applied to several skill folders.
 
     ## Phase 2. Add trigger phrases (wave)
-    > Wave: parallel subagents only under Auto-commit or Auto-PR; one commit per step. See plans-and-roadmaps, Wave phases.
+    > **Wave:** parallel subagents only under Auto-commit or Auto-PR; one commit per step. See plans-and-roadmaps, Wave phases.
     ### Step 2.1 auto-pr triggers
     Files: skills/auto-pr/
     Shared: root README row for auto-pr
@@ -912,7 +940,7 @@ so the roadmap must hold:
 - Under the title, the line that makes approval safe without this skill
   (see Phased plans), with the real paths:
 
-      > Roadmap: after approval, copy ~/.claude/plans/<slug>.md to <target>/.claude/plans/<topic>/roadmap.md and stop. Do not start Phase 1.
+      > **Roadmap:** after approval, copy ~/.claude/plans/<slug>.md to <target>/.claude/plans/<topic>/roadmap.md and stop. Do not start Phase 1.
 
 - `## Goal` and `## Decisions`: each choice, its reason, and the options
   rejected. Write these while planning the roadmap, not afterwards.
@@ -974,7 +1002,7 @@ into `<topic>/roadmap.md`, never over an existing file or link:
    then a `## Context` section quoting the decisions and outcomes it depends
    on, then `### Step N.M` items, then `### Phase N commit message`.
 
-       > Roadmap phase N of <target>/.claude/plans/<topic>/roadmap.md: after approval, link this plan as phase_N_<subject>.md, implement, write the Phase N outcome there, and stop. Plan file: ~/.claude/plans/<slug>.md
+       > **Roadmap phase N** of <target>/.claude/plans/<topic>/roadmap.md: after approval, link this plan as phase_N_<subject>.md, implement, write the Phase N outcome there, and stop. Plan file: ~/.claude/plans/<slug>.md
 
    Below it, copy the run-mode line and a `> Worktree:` line built from the
    roadmap's Decisions, so a fresh session re-enters the same worktree. Do

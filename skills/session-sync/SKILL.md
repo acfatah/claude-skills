@@ -3,7 +3,7 @@ name: session-sync
 description: "Keep several Claude sessions on one branch or PR in sync, and recap from the repo, not the transcript, after a break: forks on sub-branches, a shared sessions file, and a sync step before acting. Load when forking a session, starting a second session on the same branch or PR, resuming after a break, merging a fork back, or when the user says \"sync\", \"catch up\", \"what changed\", \"outline progress\", or \"merge the fork back\"."
 ---
 
-# Session Sync v1.4.0
+# Session Sync v1.5.0
 
 A session's context is private and goes stale as soon as another session,
 or the user, changes the repo. Do not sync memories, which load only at
@@ -145,11 +145,12 @@ there, without a permission prompt. Make a round trip instead:
 - **Point the plan at it.** When a plan exists, add one line under its
   title, below the other `>` lines:
 
-      > Sessions: <main>/.claude/sessions/<topic>.md
+      > **Sessions:** <main>/.claude/sessions/<topic>.md
 
-  Re-read the plan first and insert only that line with one Edit; edit a
-  linked plan through its plan-mode file, per `plans-and-roadmaps`. This
-  is the only plan edit this skill makes.
+  Re-read the plan first and insert only that line, after a lone `>`
+  line, with one Edit (see `plans-and-roadmaps`, Header lines); edit a
+  linked plan through its plan-mode file. This is the only plan edit this
+  skill makes.
 - **A real file.** Edit it directly.
 
 Template, with times from `date '+%Y-%m-%d %H:%M'`:
