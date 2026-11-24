@@ -54,8 +54,11 @@ PR descriptions are written for reviewers, not for the user:
 comprehensive, not brief, and this style does not apply; see the
 `pr-summary` skill.
 
-Keep chat output lines under about 80 characters: break long prose
-lines, and indent continuation lines to match. Never break code blocks,
+Don't hard-wrap prose in chat replies: write each paragraph and list
+item as one line, and let the terminal wrap it. The reply area is
+narrower than 80 columns, so a line broken at 80 wraps twice and leaves
+a word alone on a line. Lines that don't rewrap, such as code and
+diagrams, stay under about 80 characters. Never break code blocks,
 commands, tables, URLs, or file paths; let those run long so they
 copy-paste correctly.
 
