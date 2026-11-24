@@ -180,6 +180,35 @@ test('with width off, a reply with only a quote is left to the engine', async $ 
   await ui.unmount()
 })
 
+// The table in the side-by-side reply: wider than 75 columns once boxed.
+const SIDE = [
+  '| | `/resume` | Left arrow |',
+  '| :- | :- | :- |',
+  '| **Lists** | Sessions in this folder; `Ctrl+A` shows all projects | Background sessions from all projects |',
+].join('\n')
+
+test('with tables off, a table the engine draws gets the full width', async $ => {
+  await $.command.run({ command: 'reply-style', args: 'tables off' })
+  const ui = await $.ui.mount(AT(`## Side by side\n\n${SIDE}\n\nSome prose.\n\n## Next`, 110))
+
+  // Parts: p0 heading, p1 table and prose, p2 heading.
+  expect((await ui.find({ type: 'Box', key: 'p1' }))?.props.width).toBe(107)
+  expect(await ui.find({ text: /─┼─/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('with tables off, prose beside a table keeps the cap; a table in an item gets its width', async $ => {
+  await $.command.run({ command: 'reply-style', args: 'tables off' })
+  const indented = SIDE.split('\n').map(l => `  ${l}`).join('\n')
+  const ui = await $.ui.mount(AT(`## Steps\n\nSome prose.\n\n- Compare:\n\n${indented}`, 110))
+
+  // Parts: p0 heading, p1 prose, p2 list; the item's own parts start at p0.
+  expect((await ui.find({ type: 'Box', key: 'p1' }))?.props.width).toBe(75)
+  const widths = (await ui.findAll({ type: 'Box' })).map(b => b.props.width)
+  expect(widths).toContain(105)
+  await ui.unmount()
+})
+
 test('with width off, prose is as wide as the available width', async $ => {
   await $.command.run({ command: 'reply-style', args: 'width off' })
   const ui = await $.ui.mount(AT(WIDE, 120))

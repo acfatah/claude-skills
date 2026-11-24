@@ -44,6 +44,24 @@ const isBlank = (line: string) => line.trim() === ''
 const isRow = (line: string) => line.trim().startsWith('|')
 const indentOf = (line: string) => line.length - line.trimStart().length
 
+// A header row with its delimiter row under it. GFM needs as many delimiter
+// cells as header cells; a delimiter row with no pipe, such as a lone `-`,
+// is left to the engine.
+const startsTable = (line: string, next: string | undefined) =>
+  isRow(line) &&
+  next !== undefined &&
+  next.includes('|') &&
+  SEPARATOR.test(next) &&
+  splitRow(next).length === splitRow(line).length
+
+// Whether markdown holds a table, at any indent: one the mod left to the
+// engine, with tables off or inside an ordered item.
+export const holdsTable = (text: string) => {
+  const lines = text.split('\n')
+
+  return lines.some((line, i) => startsTable(line, lines[i + 1]))
+}
+
 // A bullet line: where its marker sits, where its text starts, and the text.
 // More than four spaces after the marker count as one, as in CommonMark.
 const bullet = (line: string) => {
@@ -199,15 +217,7 @@ export const segment = (text: string, parts: Parts): Segment[] => {
         continue
       }
       const next = lines[i + 1]
-      // GFM needs as many delimiter cells as header cells; a delimiter row
-      // with no pipe, such as a lone `-`, is left to the engine.
-      const isTable =
-        isRow(line) &&
-        next !== undefined &&
-        next.includes('|') &&
-        SEPARATOR.test(next) &&
-        splitRow(next).length === splitRow(line).length
-      if (parts.tables && isTable) {
+      if (parts.tables && startsTable(line, next)) {
         flush()
         const header = splitRow(line)
         const rows: string[][] = []

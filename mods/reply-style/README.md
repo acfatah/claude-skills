@@ -19,11 +19,13 @@ feature you can turn on or off on its own:
   text column, as in replies the built-in renderer draws, or at the
   terminal's width when that is narrower. Paragraphs, bullet text,
   headings, quotes and ordered lists are capped; code blocks and tables
-  keep the full width. A reply with a quote is always drawn, so the quote
-  is capped even when nothing else in the reply changes. Soft line
-  breaks in prose are joined first, as markdown reads them, so a
-  paragraph wrapped by hand wraps once, at the cap, and no word is left
-  alone on a line. A reply with a soft line break is always drawn too.
+  keep the full width, boxed tables left to the built-in renderer
+  included, along with the prose around them. A reply with a quote is
+  always drawn, so the quote is capped even when nothing else in the
+  reply changes. Soft line breaks in prose are joined first, as markdown
+  reads them, so a paragraph wrapped by hand wraps once, at the cap, and
+  no word is left alone on a line. A reply with a soft line break is
+  always drawn too.
 
 Replies the mod has nothing to change in are left to the built-in renderer.
 
@@ -216,12 +218,12 @@ bun mods/reply-style/bench/table.bench.ts
 - **`test`** runs three files. `hooks/register.test.tsx` checks that a
   reply with a table, bullets, headings or a rule is drawn by the mod,
   that one with none of them is left to the built-in renderer, that
-  prose is capped at 75 columns while code is not, and that prose wrapped
-  by hand is joined. `hooks/segment.test.ts` checks how a reply is split:
-  nested and wrapped items, heading levels, rules and setext headings,
-  code fences, ordered lists, table delimiter rows, which line breaks are
-  joined, and each switch. `hooks/command.test.ts` checks the command's
-  arguments.
+  prose is capped at 75 columns while code and boxed tables are not, and
+  that prose wrapped by hand is joined. `hooks/segment.test.ts` checks
+  how a reply is split: nested and wrapped items, heading levels, rules
+  and setext headings, code fences, ordered lists, table delimiter rows,
+  which line breaks are joined, and each switch. `hooks/command.test.ts`
+  checks the command's arguments.
 - **The benchmark** prints the time per render for a 3-row table, a 40-row
   table, a 30-item nested list and a reply with neither, then the rows
   saved at 100, 80 and 60 columns, and a sample table.
@@ -270,6 +272,10 @@ Gotchas:
   width; the built-in renderer draws the `>` bar and the text inside.
 - **Code inside an ordered item is capped.** A fence indented under a
   `1.` item stays with that item's prose, so it wraps at 75 columns too.
+- **Prose beside a boxed table is uncapped.** With `tables off`, the
+  built-in renderer sizes a table to the terminal, so the mod gives the
+  whole part, table and the prose between it and the next heading, list
+  or code block, the full width.
 - **Some lines keep their breaks.** A line ending in two spaces or `\`,
   code, tables, headings, quotes, HTML, and each new item keep their own
   lines. Quotes wrapped by hand still break twice; the built-in renderer

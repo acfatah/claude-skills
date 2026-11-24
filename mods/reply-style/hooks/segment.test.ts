@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { mayHold, segment, unwrap, worthDrawing } from './segment'
+import { holdsTable, mayHold, segment, unwrap, worthDrawing } from './segment'
 
 const ALL = { tables: true, bullets: true, headings: true, rules: true }
 const ONLY = (on: Partial<typeof ALL>) => ({ tables: false, bullets: false, headings: false, rules: false, ...on })
@@ -177,6 +177,13 @@ test('a soft line break is worth drawing only with width on', () => {
   expect(worthDrawing(segment(text, ALL), ALL)).toBe(false)
   expect(worthDrawing(segment('One line.\n\nAnother.', W), W)).toBe(false)
   expect(worthDrawing(segment('1. First\n2. Second', W), W)).toBe(false)
+})
+
+test('holdsTable finds a table at any indent, and nothing else', () => {
+  expect(holdsTable('Intro.\n\n| A | B |\n| :- | :- |\n| 1 | 2 |')).toBe(true)
+  expect(holdsTable('1. Step\n\n   | A | B |\n   | --- | --- |')).toBe(true)
+  expect(holdsTable('No table | here, just a pipe.')).toBe(false)
+  expect(holdsTable('| A | B |\n| - |')).toBe(false)
 })
 
 test('a delimiter row must match the header in cells, and hold dashes', () => {
