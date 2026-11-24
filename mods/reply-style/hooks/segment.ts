@@ -23,7 +23,9 @@ export type Segment =
 // the engine draws the quote itself.
 export type Parts = { tables: boolean; bullets: boolean; headings: boolean; rules: boolean; width?: boolean }
 
-const SEPARATOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/
+// A table's delimiter row: one dash or more per cell, as GFM allows, so
+// `| :- | :- |` counts as well as `| --- | --- |`.
+const SEPARATOR = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/
 const FENCE = /^\s*(```|~~~)/
 const BULLET = /^( *)([-*+])( +)(.*)$/
 const ORDERED = /^( *)(\d{1,9}[.)])( +)/
@@ -197,7 +199,15 @@ export const segment = (text: string, parts: Parts): Segment[] => {
         continue
       }
       const next = lines[i + 1]
-      if (parts.tables && isRow(line) && next !== undefined && SEPARATOR.test(next)) {
+      // GFM needs as many delimiter cells as header cells; a delimiter row
+      // with no pipe, such as a lone `-`, is left to the engine.
+      const isTable =
+        isRow(line) &&
+        next !== undefined &&
+        next.includes('|') &&
+        SEPARATOR.test(next) &&
+        splitRow(next).length === splitRow(line).length
+      if (parts.tables && isTable) {
         flush()
         const header = splitRow(line)
         const rows: string[][] = []

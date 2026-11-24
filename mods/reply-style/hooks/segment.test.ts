@@ -124,3 +124,15 @@ test('a quote is worth drawing only with width on, and never in code', () => {
   expect(worthDrawing(segment('```\n> not a quote\n```', W), W)).toBe(false)
   expect(worthDrawing(segment('a > b, inline', W), W)).toBe(false)
 })
+
+test('a delimiter row takes one dash or more per cell, aligned or not', () => {
+  for (const sep of ['| --- | --- |', '| :- | :- |', '|-|-|', '| :-: | -: |', '- | -'])
+    expect(kinds(`| A | B |\n${sep}\n| 1 | 2 |`)).toEqual(['table'])
+  expect(kinds('| | `x` | y |\n| :- | :- | :- |\n| **a** | b | c |')).toEqual(['table'])
+})
+
+test('a delimiter row must match the header in cells, and hold dashes', () => {
+  expect(kinds('| A | B |\n| - |\n| 1 | 2 |')).toEqual(['markdown'])
+  expect(kinds('| A |\n-\nText')).toEqual(['markdown'])
+  expect(kinds('| A | B |\n| : | : |\n| 1 | 2 |')).toEqual(['markdown'])
+})

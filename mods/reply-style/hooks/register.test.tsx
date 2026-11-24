@@ -30,6 +30,22 @@ test('a reply with a table is drawn by the mod, with a header rule', async $ => 
   await ui.unmount()
 })
 
+test('a table with one-dash delimiters is drawn by the mod, not boxed', async $ => {
+  const text = [
+    '## Side by side',
+    '',
+    '| | `/resume` | Left arrow |',
+    '| :- | :- | :- |',
+    '| **Lists** | Sessions in this folder; `Ctrl+A` shows all projects | Background sessions from all projects |',
+  ].join('\n')
+  const ui = await $.ui.mount(MSG(text))
+
+  expect(await ui.find({ text: /─┼─/ })).toBeDefined()
+  expect(await ui.find({ text: /[┌┐└┘]/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Markdown' })).toBeUndefined()
+  await ui.unmount()
+})
+
 test('a reply without a table or a bullet is left to the engine', async $ => {
   const ui = await $.ui.mount(MSG('No table | here, just a pipe.\n\n1. An ordered item'))
 

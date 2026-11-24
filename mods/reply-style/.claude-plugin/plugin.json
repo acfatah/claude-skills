@@ -1,6 +1,6 @@
 {
   "name": "reply-style",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Draw Claude's terminal replies in glow's style: compact tables, • bullets, glow-shaped headings, dim rules, and prose capped at 75 columns",
   "author": {
     "name": "Achmad F. Ibrahim"
