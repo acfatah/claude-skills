@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { mayHold, segment, worthDrawing } from './segment'
+import { mayHold, segment, unwrap, worthDrawing } from './segment'
 
 const ALL = { tables: true, bullets: true, headings: true, rules: true }
 const ONLY = (on: Partial<typeof ALL>) => ({ tables: false, bullets: false, headings: false, rules: false, ...on })
@@ -129,6 +129,54 @@ test('a delimiter row takes one dash or more per cell, aligned or not', () => {
   for (const sep of ['| --- | --- |', '| :- | :- |', '|-|-|', '| :-: | -: |', '- | -'])
     expect(kinds(`| A | B |\n${sep}\n| 1 | 2 |`)).toEqual(['table'])
   expect(kinds('| | `x` | y |\n| :- | :- | :- |\n| **a** | b | c |')).toEqual(['table'])
+})
+
+test('unwrap joins a paragraph and an item wrapped by hand', () => {
+  expect(unwrap('Use **`/fork`**, not `/branch`. It moves\nyou into the copy.')).toBe(
+    'Use **`/fork`**, not `/branch`. It moves you into the copy.',
+  )
+  expect(unwrap('1. **Wait.** The docs don\'t say\n   whether it works.\n2. **Run it**,\n   like this.')).toBe(
+    "1. **Wait.** The docs don't say whether it works.\n2. **Run it**, like this.",
+  )
+  expect(unwrap('Sources: [a](https://a.test),\n[b](https://b.test)')).toBe('Sources: [a](https://a.test), [b](https://b.test)')
+})
+
+test('unwrap keeps blocks, items and hard breaks on their own lines', () => {
+  const same = [
+    'One.\n\nTwo.',
+    'Line one  \nline two',
+    'Line one\\\nline two',
+    'Intro:\n- one\n- two',
+    '1. First\n2. Second',
+    '1. Step\n     - nested',
+    'Title\n---',
+    'Title\n===',
+    'Text\n***',
+    '## Head\nText',
+    '> quoted\n> more',
+    'Text\n> quoted',
+    '| A | B |\n| - | - |',
+    '<details>\nText',
+    '```\na\nb\n```',
+    '1. Step\n\n   ```\n   a\n   b\n   ```',
+    'Text.\n\n    code a\n    code b',
+  ]
+  for (const text of same) expect(unwrap(text)).toBe(text)
+})
+
+test('unwrap joins prose either side of code, but never into it', () => {
+  expect(unwrap('a\nb\n```\nc\nd\n```\ne\nf')).toBe('a b\n```\nc\nd\n```\ne f')
+})
+
+test('a soft line break is worth drawing only with width on', () => {
+  const W = { ...ALL, width: true }
+  const text = 'A paragraph wrapped\nby hand.'
+  expect(mayHold(text, W)).toBe(true)
+  expect(mayHold(text, ALL)).toBe(false)
+  expect(worthDrawing(segment(text, W), W)).toBe(true)
+  expect(worthDrawing(segment(text, ALL), ALL)).toBe(false)
+  expect(worthDrawing(segment('One line.\n\nAnother.', W), W)).toBe(false)
+  expect(worthDrawing(segment('1. First\n2. Second', W), W)).toBe(false)
 })
 
 test('a delimiter row must match the header in cells, and hold dashes', () => {

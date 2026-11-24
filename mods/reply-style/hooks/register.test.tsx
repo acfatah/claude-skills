@@ -46,6 +46,23 @@ test('a table with one-dash delimiters is drawn by the mod, not boxed', async $ 
   await ui.unmount()
 })
 
+test('prose wrapped by hand is joined before the engine wraps it', async $ => {
+  const text = '## Steps\n\n1. **Wait.** If you type a command while\n   Claude is responding, it waits.'
+  const ui = await $.ui.mount(MSG(text))
+
+  const md = await ui.find({ type: 'Markdown' })
+  expect(md?.props.text).toBe('1. **Wait.** If you type a command while Claude is responding, it waits.')
+  await ui.unmount()
+})
+
+test('bullet text wrapped by hand is joined too', async $ => {
+  const ui = await $.ui.mount(MSG('- **Shared.** Two sessions will\n  overwrite each other.'))
+
+  const md = await ui.find({ type: 'Markdown' })
+  expect(md?.props.text).toBe('**Shared.** Two sessions will overwrite each other.')
+  await ui.unmount()
+})
+
 test('a reply without a table or a bullet is left to the engine', async $ => {
   const ui = await $.ui.mount(MSG('No table | here, just a pipe.\n\n1. An ordered item'))
 

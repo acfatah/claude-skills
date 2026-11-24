@@ -2,7 +2,7 @@ import type { Register } from 'claude-code'
 
 import { FEATURES, parse, USAGE } from './command'
 import type { Feature } from './command'
-import { mayHold, segment, worthDrawing } from './segment'
+import { mayHold, segment, unwrap, worthDrawing } from './segment'
 import type { Item, Segment } from './segment'
 import { boxedRows, layout, spans } from './table'
 import type { Line } from './table'
@@ -155,9 +155,11 @@ export const register: Register = on => {
         const key = `p${i}`
         const top = gapAbove(all, i)
         if (p.kind === 'markdown') {
+          // With the cap on, soft line breaks are joined, so prose wrapped
+          // by hand wraps once, at the cap, with no word left alone.
           return (
             <Box key={key} marginTop={top} width={prose}>
-              <Markdown text={p.text} />
+              <Markdown text={isOn.width ? unwrap(p.text) : p.text} />
             </Box>
           )
         }
