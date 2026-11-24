@@ -19,11 +19,13 @@ export type Segment =
   | { kind: 'heading'; level: number; text: string; blankBefore: boolean }
   | { kind: 'rule'; text: string; blankBefore: boolean }
 
-// `width`: a quote is a reason to draw a reply, so its prose gets the cap;
-// the engine draws the quote itself.
+// `width`: a quote or a soft line break is a reason to draw a reply, so its
+// prose gets the cap and wraps once; the engine draws the quote itself.
 export type Parts = { tables: boolean; bullets: boolean; headings: boolean; rules: boolean; width?: boolean }
 
-const SEPARATOR = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/
+// A table's delimiter row: one dash or more per cell, as GFM allows, so
+// `| :- | :- |` counts as well as `| --- | --- |`.
+const SEPARATOR = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/
 const FENCE = /^\s*(```|~~~)/
 const BULLET = /^( *)([-*+])( +)(.*)$/
 const ORDERED = /^( *)(\d{1,9}[.)])( +)/
@@ -41,6 +43,24 @@ const QUOTE = /^ {0,3}>/m
 const isBlank = (line: string) => line.trim() === ''
 const isRow = (line: string) => line.trim().startsWith('|')
 const indentOf = (line: string) => line.length - line.trimStart().length
+
+// A header row with its delimiter row under it. GFM needs as many delimiter
+// cells as header cells; a delimiter row with no pipe, such as a lone `-`,
+// is left to the engine.
+const startsTable = (line: string, next: string | undefined) =>
+  isRow(line) &&
+  next !== undefined &&
+  next.includes('|') &&
+  SEPARATOR.test(next) &&
+  splitRow(next).length === splitRow(line).length
+
+// Whether markdown holds a table, at any indent: one the mod left to the
+// engine, with tables off or inside an ordered item.
+export const holdsTable = (text: string) => {
+  const lines = text.split('\n')
+
+  return lines.some((line, i) => startsTable(line, lines[i + 1]))
+}
 
 // A bullet line: where its marker sits, where its text starts, and the text.
 // More than four spaces after the marker count as one, as in CommonMark.
@@ -197,7 +217,7 @@ export const segment = (text: string, parts: Parts): Segment[] => {
         continue
       }
       const next = lines[i + 1]
-      if (parts.tables && isRow(line) && next !== undefined && SEPARATOR.test(next)) {
+      if (parts.tables && startsTable(line, next)) {
         flush()
         const header = splitRow(line)
         const rows: string[][] = []
@@ -222,16 +242,68 @@ export const segment = (text: string, parts: Parts): Segment[] => {
   return out
 }
 
+// A line that ends in a hard break: two spaces or a backslash.
+const HARD_BREAK = /( {2,}|\\)$/
+// Lines, indent removed, that never take the next line onto their own: a
+// table row, a heading, a quote or HTML.
+const KEEPS_END = /^(\||#{1,6}(\s|$)|>|<)/
+// Lines, indent removed, that never join the line above: a block, an item,
+// a table row, HTML or a setext underline.
+const OWN_LINE = /^(#{1,6}(\s|$)|>|\||<|[-*+]( |$)|\d{1,9}[.)]( |$)|=+ *$|-+ *$)/
+
+// Joins soft line breaks, as markdown reads them: a paragraph wrapped by
+// hand becomes one line, so the renderer wraps it once, at its own width,
+// and no word is left alone on a line. Hard breaks, code (fenced, or
+// indented after a blank line), tables, headings, quotes, HTML and the
+// start of every item keep their own lines.
+export const unwrap = (text: string): string => {
+  const out: string[] = []
+  let inFence = false
+  // The last line out may take the next one onto it.
+  let open = false
+  // The next non-blank line starts a paragraph, and is code if indented 4.
+  let start = true
+  let code = false
+  for (const line of text.split('\n')) {
+    if (inFence || FENCE.test(line)) {
+      if (FENCE.test(line)) inFence = !inFence
+      out.push(line)
+      open = start = false
+      continue
+    }
+    if (isBlank(line)) {
+      out.push(line)
+      open = false
+      start = true
+      continue
+    }
+    const t = line.trimStart()
+    if (open && !OWN_LINE.test(t) && !RULE.test(t)) {
+      out[out.length - 1] = `${(out[out.length - 1] ?? '').trimEnd()} ${t}`
+      open = !HARD_BREAK.test(line)
+      continue
+    }
+    if (start) code = indentOf(line) >= 4
+    start = false
+    out.push(line)
+    open = !code && !HARD_BREAK.test(line) && !KEEPS_END.test(t) && !RULE.test(t)
+  }
+
+  return out.join('\n')
+}
+
 // Whether a reply may hold a part to draw: a cheap test before `segment`.
 export const mayHold = (text: string, parts: Parts) =>
   (parts.tables && text.includes('|')) ||
   (parts.bullets && /^ {0,3}[-*+] /m.test(text)) ||
   (parts.headings && /^ {0,3}#{1,6}([ \t]|$)/m.test(text)) ||
   (parts.rules && /^ {0,3}([-*_])( *\1){2,} *$/m.test(text)) ||
-  (parts.width === true && QUOTE.test(text))
+  (parts.width === true && (QUOTE.test(text) || /\S[ \t]*\n[ \t]*\S/.test(text)))
 
 // Whether the parts are worth drawing: a part the mod draws, or, with
-// `width` on, a quote in the markdown, so its lines wrap at the cap.
+// `width` on, a quote or a soft line break in the markdown, so its lines
+// wrap at the cap and only once.
 export const worthDrawing = (all: Segment[], parts: Parts) =>
   all.some(p => p.kind !== 'markdown' && p.kind !== 'code') ||
-  (parts.width === true && all.some(p => p.kind === 'markdown' && QUOTE.test(p.text)))
+  (parts.width === true &&
+    all.some(p => p.kind === 'markdown' && (QUOTE.test(p.text) || unwrap(p.text) !== p.text)))

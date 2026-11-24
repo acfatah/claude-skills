@@ -30,6 +30,39 @@ test('a reply with a table is drawn by the mod, with a header rule', async $ => 
   await ui.unmount()
 })
 
+test('a table with one-dash delimiters is drawn by the mod, not boxed', async $ => {
+  const text = [
+    '## Side by side',
+    '',
+    '| | `/resume` | Left arrow |',
+    '| :- | :- | :- |',
+    '| **Lists** | Sessions in this folder; `Ctrl+A` shows all projects | Background sessions from all projects |',
+  ].join('\n')
+  const ui = await $.ui.mount(MSG(text))
+
+  expect(await ui.find({ text: /─┼─/ })).toBeDefined()
+  expect(await ui.find({ text: /[┌┐└┘]/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Markdown' })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('prose wrapped by hand is joined before the engine wraps it', async $ => {
+  const text = '## Steps\n\n1. **Wait.** If you type a command while\n   Claude is responding, it waits.'
+  const ui = await $.ui.mount(MSG(text))
+
+  const md = await ui.find({ type: 'Markdown' })
+  expect(md?.props.text).toBe('1. **Wait.** If you type a command while Claude is responding, it waits.')
+  await ui.unmount()
+})
+
+test('bullet text wrapped by hand is joined too', async $ => {
+  const ui = await $.ui.mount(MSG('- **Shared.** Two sessions will\n  overwrite each other.'))
+
+  const md = await ui.find({ type: 'Markdown' })
+  expect(md?.props.text).toBe('**Shared.** Two sessions will overwrite each other.')
+  await ui.unmount()
+})
+
 test('a reply without a table or a bullet is left to the engine', async $ => {
   const ui = await $.ui.mount(MSG('No table | here, just a pipe.\n\n1. An ordered item'))
 
@@ -144,6 +177,35 @@ test('with width off, a reply with only a quote is left to the engine', async $ 
   const ui = await $.ui.mount(AT('> A quote.', 120))
 
   expect(await ui.find({ type: 'Box', key: 'p0' })).toBeUndefined()
+  await ui.unmount()
+})
+
+// The table in the side-by-side reply: wider than 75 columns once boxed.
+const SIDE = [
+  '| | `/resume` | Left arrow |',
+  '| :- | :- | :- |',
+  '| **Lists** | Sessions in this folder; `Ctrl+A` shows all projects | Background sessions from all projects |',
+].join('\n')
+
+test('with tables off, a table the engine draws gets the full width', async $ => {
+  await $.command.run({ command: 'reply-style', args: 'tables off' })
+  const ui = await $.ui.mount(AT(`## Side by side\n\n${SIDE}\n\nSome prose.\n\n## Next`, 110))
+
+  // Parts: p0 heading, p1 table and prose, p2 heading.
+  expect((await ui.find({ type: 'Box', key: 'p1' }))?.props.width).toBe(107)
+  expect(await ui.find({ text: /─┼─/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('with tables off, prose beside a table keeps the cap; a table in an item gets its width', async $ => {
+  await $.command.run({ command: 'reply-style', args: 'tables off' })
+  const indented = SIDE.split('\n').map(l => `  ${l}`).join('\n')
+  const ui = await $.ui.mount(AT(`## Steps\n\nSome prose.\n\n- Compare:\n\n${indented}`, 110))
+
+  // Parts: p0 heading, p1 prose, p2 list; the item's own parts start at p0.
+  expect((await ui.find({ type: 'Box', key: 'p1' }))?.props.width).toBe(75)
+  const widths = (await ui.findAll({ type: 'Box' })).map(b => b.props.width)
+  expect(widths).toContain(105)
   await ui.unmount()
 })
 
