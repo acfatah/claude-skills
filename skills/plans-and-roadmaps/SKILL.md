@@ -1,9 +1,9 @@
 ---
 name: plans-and-roadmaps
-description: "Rules for plan documents and roadmaps: where plan files live, whether a plan runs in a worktree, which session a plan is written in, progress stamps, state directories, phased plans, multi-session roadmaps. Load before writing, executing, stamping, or moving a plan: the plan-mode file, any .md under .claude/plans/, or a PLAN*.md / TODO.md being executed. Also load to resume a paused or shelved plan, or to list plans by state."
+description: "Rules for plan documents and roadmaps: where plan files live, whether a plan runs in a worktree, which session a plan is written in, progress stamps, state directories, phased plans, multi-session roadmaps. Load before writing, executing, stamping, or moving a plan: the plan-mode file, any .md under .claude/plans/, or a PLAN*.md / TODO.md being executed. Also load to resume a paused or shelved plan, to list plans by state, or to outline where a roadmap stands."
 ---
 
-# Plans and Roadmaps v1.21.0
+# Plans and Roadmaps v1.22.0
 
 These rules apply to the plan-mode plan file, any `.md` under a
 `.claude/plans/` directory, and any `PLAN*.md` or `TODO.md` you are executing
@@ -1039,3 +1039,85 @@ into `<topic>/roadmap.md`, never over an existing file or link:
 
 Phase plans stay in `<topic>/`, as real files, until the whole roadmap is
 complete.
+
+### Roadmap progress
+
+When the user asks where a roadmap stands, as `/roadmap-progress` does,
+outline it from the files. This is read-only: never stamp, edit, link,
+copy or move anything, and never plan or start a phase.
+
+**Find the roadmaps** in the main checkout, whose path is the first
+`worktree` line of `git worktree list --porcelain`, so a session inside a
+worktree still finds them:
+
+- **Active:** each `<main>/.claude/plans/<topic>/roadmap.md` directly
+  under `.claude/plans/`. The state directories (`completed/`, `paused/`,
+  `superseded/`, `archived/`) are not topics.
+- **Paused:** each `<main>/.claude/plans/paused/<topic>/roadmap.md`. Not
+  outlined unless asked for by topic, but named in one closing line:
+  `Paused: <topic>, <topic>`.
+- **Ignored:** roadmaps under `completed/`, `superseded/` and
+  `archived/`, unless asked for by topic.
+- **This repo only.** A roadmap for another repo lives in that repo.
+
+**Choose which to show:**
+
+| Request | Situation | Show |
+|---|---|---|
+| a topic | its folder name matches exactly | that roadmap's outline, with its state if not active |
+| a topic | no exact match | the near matches, one line each; pick none |
+| none | no active roadmap | say so, and name the paused ones |
+| none | one active | its outline |
+| none | several, one on this branch | its outline, then `Other roadmaps: <topic>, <topic>` |
+| none | several, none or many on this branch | the overview, then stop |
+
+- **On this branch** means the current branch, from
+  `git branch --show-current`, appears as a whole word in that roadmap's
+  `## Decisions`. The match is best-effort: no match or several matches
+  give the overview. Never guess.
+- **Same topic in two states:** show the active one, and name the other
+  state in one line.
+
+**The overview** is one line per active roadmap, using the progress line
+and the frontmatter `updated` time:
+
+    - **postgres**: Phase 2/4 · Step 3/5 (updated 2026-11-18 16:20)
+    - **auth-revamp**: Phase 1/3, not planned yet (updated 2026-11-02 09:12)
+
+End it with: `Run /roadmap-progress <topic> for one roadmap's outline.`
+
+**The outline** of one roadmap:
+
+    **Roadmap postgres**: next **Phase 2/4 · Step 3/5**: Route callers
+    - ✅ Phase 1. Extract loader interface
+    - ▶ Phase 2. Add pg adapter: 2/5 steps done, 1 blocked
+    - ○ Phase 3. Dual-write: not planned yet
+    - ○ Phase 4. Cut over: not planned yet
+    Last outcome (Phase 1): 1 deviation: kept the sync loader for tests
+    Waiting on me: Step 2.4 is blocked: which pool size?
+    Next, in this session or a new one:
+      "Continue phase 2 of /abs/path/.claude/plans/postgres/roadmap.md."
+
+- **Header:** the roadmap's title, then the progress line per Progress
+  line: count phases from `roadmap.md`'s `## Phase` headings and steps
+  from the current phase plan's `### Step` headings, from the live
+  files, leaving dropped (struck-through) items out.
+- **One line per phase:** `✅` stamped, `⛔` has a blocked step, `▶` the
+  current phase, `○` not started. Add the step count for a phase with a
+  phase plan, or `not planned yet` for one without.
+- **Last outcome:** the latest `### Phase N outcome`, in one line. Write
+  `as planned` when it says `None.`; skip the line before Phase 1 ends.
+- **Waiting on me:** only when something needs the user: blocked steps
+  with their question, a broken phase link, or a `> Roadmap: after
+  approval …` line still in `roadmap.md` (the copy step never finished).
+- **Next:** the prompt to paste, with the roadmap's absolute path:
+  - **Current phase has a plan with open steps:**
+    `"Continue phase N of <path>."`
+  - **Current phase has no plan:** in a fresh session, in plan mode,
+    `"Plan phase N of <path>."`
+  - **Every phase stamped:**
+    `"/plans-and-roadmaps move the finished <topic> roadmap to completed."`
+- **Broken phase link:** a `phase_N_<subject>.md` that is a link
+  (`test -L`) whose target is gone (`test -e` fails) lost its plan-mode
+  file to cleanup. Show only `**Phase N/M**`, say the link is broken, and
+  never count its steps as zero.

@@ -55,6 +55,11 @@ split into phased plans and multi-session roadmaps.
 - **Writes a short stop instruction** into every phased plan and roadmap,
   so the rules hold even if approval clears the context.
 - **Carries context between sessions** through a roadmap file.
+- **Outlines where a roadmap stands,** read-only: one line per phase, the
+  current step, what waits on you, and the prompt to paste for the next
+  phase. With several roadmaps it picks the one on the current branch, or
+  lists them all. [`roadmap-progress`](../roadmap-progress) runs it as
+  `/roadmap-progress`.
 
 ## What it is not
 
@@ -160,6 +165,8 @@ ln -sfn "$PWD/skills/plans-and-roadmaps" ~/.claude/skills/plans-and-roadmaps
 - **Resume or list:** "Resume the paused cache plan." / "List my plans."
   Claude groups them by state: active at the top level, then
   `completed/`, `paused/`, `superseded/`, `archived/`.
+- **Progress:** "Where does the postgres roadmap stand?" Claude outlines
+  it and gives the prompt for the next phase, without changing anything.
 - **Finish:** "/plans-and-roadmaps move the finished plan to completed."
   Claude moves it only when every step is stamped.
 
@@ -173,7 +180,8 @@ context between sessions.
    "Make a roadmap for X." After approval Claude copies it into the repo
    and stops.
 2. **Plan a phase.** In a fresh session, enter plan mode and ask:
-   "Plan phase 2 of .claude/plans/<topic>/roadmap.md."
+   "Plan phase 2 of .claude/plans/<topic>/roadmap.md." Not sure which
+   phase is next? Run `/roadmap-progress` first; it ends with this prompt.
 3. **Build it.** After approval Claude implements the phase, records its
    outcome in the roadmap, and stops with a commit message.
 4. **Repeat** until every phase is stamped. The whole folder then moves
