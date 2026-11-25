@@ -4,6 +4,7 @@ import { FEATURES, parse, USAGE } from './command'
 import type { Feature } from './command'
 import { holdsTable, mayHold, segment, unwrap, worthDrawing } from './segment'
 import type { Item, Segment } from './segment'
+import { toUnicode } from './diagram'
 import { boxedRows, layout, spans } from './table'
 import type { Line } from './table'
 
@@ -28,7 +29,14 @@ const PREFIX: Record<number, string> = { 1: ' ', 2: '█ ', 3: '▌ ', 4: '│ '
 
 export const register: Register = on => {
   // Switches and measurements for this load; a reload starts them over.
-  const isOn: Record<Feature, boolean> = { tables: true, bullets: true, headings: true, rules: true, width: true }
+  const isOn: Record<Feature, boolean> = {
+    tables: true,
+    bullets: true,
+    headings: true,
+    rules: true,
+    width: true,
+    diagrams: true,
+  }
   let calls = 0
   let drawn = 0
   let tables = 0
@@ -37,6 +45,7 @@ export const register: Register = on => {
   let lists = 0
   let headings = 0
   let rules = 0
+  let diagrams = 0
   let totalMs = 0
   let maxMs = 0
 
@@ -53,7 +62,7 @@ export const register: Register = on => {
     const cmd = parse(e.args)
     if (cmd.kind === 'usage') return { text: USAGE }
     if (cmd.kind === 'reset') {
-      calls = drawn = tables = rowsMine = rowsBoxed = lists = headings = rules = totalMs = maxMs = 0
+      calls = drawn = tables = rowsMine = rowsBoxed = lists = headings = rules = diagrams = totalMs = maxMs = 0
 
       return { text: 'Reply style: stats reset.' }
     }
@@ -70,7 +79,7 @@ export const register: Register = on => {
       text: [
         `Reply style: ${FEATURES.map(f => `${f} ${isOn[f] ? 'on' : 'off'}`).join(', ')}`,
         `- Message renders seen: ${calls}; drawn by the mod: ${drawn}`,
-        `- Drawn: ${tables} tables, ${lists} bullet lists, ${headings} headings, ${rules} rules (counted per render, so streaming counts repeats)`,
+        `- Drawn: ${tables} tables, ${lists} bullet lists, ${headings} headings, ${rules} rules, ${diagrams} diagrams (counted per render, so streaming counts repeats)`,
         `- Table rows: ${rowsMine} compact vs about ${rowsBoxed} boxed, ${saved} saved`,
         `- Hook time per drawn render: avg ${avg} ms, max ${maxMs} ms`,
       ].join('\n'),
@@ -169,6 +178,16 @@ export const register: Register = on => {
           return (
             <Box key={key} marginTop={top}>
               <Markdown text={p.text} />
+            </Box>
+          )
+        }
+        if (p.kind === 'diagram') {
+          diagrams++
+
+          // Drawn as a plain code block, so it looks like any other.
+          return (
+            <Box key={key} marginTop={top}>
+              <Markdown text={`\`\`\`text\n${toUnicode(p.body)}\n\`\`\``} />
             </Box>
           )
         }

@@ -69,7 +69,7 @@ interface, such as how replies are drawn, not skills.
 
 | Mod | Description |
 |---|---|
-| [reply-style](mods/reply-style) | Redraw parts of terminal replies in glow's style, each switchable with `/reply-style`: tables get one rule under the header, `│` between columns, no outer box or rules between rows, and inline code in red on grey, for about 25-33% fewer rows per table; bullet lists use `•`, with nested items indented and wrapped lines aligned; headings get glow's `█`, `▌` and `│` prefixes and the rule under `##`; `---` rules are drawn dim; prose wraps at 75 columns while code and tables keep the full width, with lines wrapped by hand joined first so no word is left alone on a line. |
+| [reply-style](mods/reply-style) | Redraw parts of terminal replies in glow's style, each switchable with `/reply-style`: tables get one rule under the header, `│` between columns, no outer box or rules between rows, and inline code in red on grey, for about 25-33% fewer rows per table; bullet lists use `•`, with nested items indented and wrapped lines aligned; headings get glow's `█`, `▌` and `│` prefixes and the rule under `##`; `---` rules are drawn dim; prose wraps at 75 columns while code and tables keep the full width, with lines wrapped by hand joined first so no word is left alone on a line; ASCII diagrams in a ```` ```diagram ```` fence are redrawn with Unicode lines and arrows. |
 
 The skills CLI does not install mods. Clone the repo and start Claude Code
 with `claude --plugin-dir <clone>/mods/<name>`; each mod's README has the
