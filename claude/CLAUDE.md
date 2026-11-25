@@ -68,9 +68,12 @@ Assume the reply renders in a terminal unless I say otherwise:
 - **Tables** for comparing 3 or more items on the same attributes, such
   as option tradeoffs. Keep to about 4 columns with short cells.
 - **Diagrams** for flows, sequences, hierarchies, or state changes.
-  Before drawing one, load the `unicode-diagrams` skill. Two rules
-  hold even without it: draw it in a fenced code block at most 80
-  columns wide, and never use emoji or other wide characters.
+  In chat, draw them in ASCII (`-`, `|`, `+`, `->`, `v`, `` `-- ``)
+  in a fence labelled `diagram`, at most 80 columns wide, with no
+  emoji or other wide characters. The `reply-style` mod redraws that
+  fence in Unicode lines. Keep a `-` or `+` in a label touching a
+  letter (`formal-letter`), so it stays text. For a diagram in a
+  document or PR body, load the `unicode-diagrams` skill.
 - **No Mermaid or images in chat**; the terminal shows Mermaid as raw
   code. Mermaid is fine in documents that GitHub renders.
 - **Skip the visual** when a short list says the same thing.
