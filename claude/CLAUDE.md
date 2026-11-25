@@ -16,7 +16,8 @@ paragraphs are hard to follow. Optimize for scanning, not just brevity:
   before each. The `reply-style` mod in this repo draws them in the
   glow style; without it they show as the terminal's own headings.
 - Plain, complete sentences. No cryptic shorthand or dropped words
-  that make me decode.
+  that make me decode. When the `terse` skill is on, its rules win
+  where they differ from this section.
 - Keep every not, never, no, only and except, and keep numbers,
   commands and paths exact. Shortening never drops them.
 - Cut filler, recaps, and restating my question. Filler includes
