@@ -26,6 +26,12 @@ feature you can turn on or off on its own:
   reads them, so a paragraph wrapped by hand wraps once, at the cap, and
   no word is left alone on a line. A reply with a soft line break is
   always drawn too.
+- **Diagrams:** a code block fenced as ```` ```diagram ```` is redrawn
+  with Unicode lines, one cell for one cell, so the columns never move:
+  `-` runs become `─`, `|` becomes `│`, each `+` and the `` ` `` of a
+  `` `-- `` takes the corner or junction its neighbours call for (`┌`,
+  `├`, `┼`, `└`), and `>`, `<`, `^` and `v` on a line become `▶ ◀ ▲ ▼`.
+  It is drawn as a `text` code block.
 
 Replies the mod has nothing to change in are left to the built-in renderer.
 
@@ -80,11 +86,31 @@ Headings, as Claude writes them, then as the mod draws them (the rule is
 ▌ Subsection
 ```
 
+A diagram as Claude writes it, then as the mod draws it:
+
+````
+```diagram
++--------+     +--------+
+| client | --> | server |
++--------+     +---+----+
+                   |
+                   v
+```
+````
+
+```
+┌────────┐     ┌────────┐
+│ client │ ──▶ │ server │
+└────────┘     └───┬────┘
+                   │
+                   ▼
+```
+
 ## What it is
 
 - **A terminal display change.** It hooks the `AssistantMessage` render on
   the terminal surface only, and only for replies with a part it
-  changes: a table, a bullet list, a heading or a rule.
+  changes: a table, a bullet list, a heading, a rule or a diagram fence.
 - **Display only.** The stored message and what the model sees are
   unchanged; the mod redraws the text it is given.
 - **Shorter tables.** Measured on one machine, a table takes about 25-33%
@@ -104,6 +130,9 @@ Headings, as Claude writes them, then as the mod draws them (the rule is
 - **Not a theme.** It changes only its features' parts; prose, ordered
   lists, quotes and code blocks go through Claude Code's own markdown
   renderer.
+- **Not a diagram drawer.** It converts the lines Claude drew; it does
+  not lay out a diagram, and it never changes a fence with another
+  label, such as ```` ```text ````.
 - **Not for setext headings.** A heading underlined with `===` or `---` is
   left to the built-in renderer; only `#` headings are drawn.
 - **Not a list renderer for every list.** Bullets nested under an ordered
@@ -127,6 +156,8 @@ Headings, as Claude writes them, then as the mod draws them (the rule is
   `/reply-style headings off` or `/reply-style rules off`.
 - **You want prose to use the whole width** → run
   `/reply-style width off`.
+- **You want diagrams kept in ASCII** → run
+  `/reply-style diagrams off`.
 
 **Negative example:** a reply that compares CJK place names with emoji
 status icons in a table will not line up with this mod; turn it off with
@@ -175,11 +206,11 @@ marketplace entry yet, so `/plugin install` does not find it.
 
 - **`/reply-style`:** shows which features are on, and stats for this
   load: message renders seen, renders drawn by the mod, tables, bullet
-  lists, headings and rules drawn, table rows compact against an estimate
+  lists, headings, rules and diagrams drawn, table rows compact against an estimate
   for boxed, and hook time per drawn render (average and maximum).
 - **`/reply-style <feature> off`** and **`/reply-style <feature> on`:**
   turn one feature off or on, where `<feature>` is `tables`, `bullets`,
-  `headings`, `rules` or `width`. New and redrawn replies follow the
+  `headings`, `rules`, `width` or `diagrams`. New and redrawn replies follow the
   switch.
 - **`/reply-style width off`:** lets prose in replies the mod draws run
   the full terminal width and keep its line breaks as written; `width on`
@@ -198,6 +229,9 @@ marketplace entry yet, so `/plugin install` does not find it.
 - **See bullets:** "List three tradeoffs of SQLite, with a nested example
   under each."
 - **See headings:** "Explain git rebase, with a section for each step."
+- **See a diagram:** "Draw the request flow from browser to database as
+  a diagram." Claude labels the fence `diagram` when your CLAUDE.md asks
+  it to; see Gotchas.
 - **Switch:** `/reply-style tables off`, then ask for the same table again
   to compare with the built-in renderer; `/reply-style bullets off` does
   the same for lists.
@@ -215,15 +249,17 @@ bun mods/reply-style/bench/table.bench.ts
 
 - **`validate`** type-checks the hooks module. It warns that the mod has
   no icon; that is expected.
-- **`test`** runs three files. `hooks/register.test.tsx` checks that a
+- **`test`** runs four files. `hooks/register.test.tsx` checks that a
   reply with a table, bullets, headings or a rule is drawn by the mod,
   that one with none of them is left to the built-in renderer, that
   prose is capped at 75 columns while code and boxed tables are not, and
   that prose wrapped by hand is joined. `hooks/segment.test.ts` checks
   how a reply is split: nested and wrapped items, heading levels, rules
-  and setext headings, code fences, ordered lists, table delimiter rows,
-  which line breaks are joined, and each switch. `hooks/command.test.ts`
-  checks the command's arguments.
+  and setext headings, code fences, diagram fences, ordered lists, table
+  delimiter rows, which line breaks are joined, and each switch.
+  `hooks/diagram.test.ts` checks the ASCII to Unicode conversion: boxes,
+  arrows, trees, labels left as text, and that widths never change.
+  `hooks/command.test.ts` checks the command's arguments.
 - **The benchmark** prints the time per render for a 3-row table, a 40-row
   table, a 30-item nested list and a reply with neither, then the rows
   saved at 100, 80 and 60 columns, and a sample table.
@@ -284,7 +320,27 @@ Gotchas:
   markdown, its lines are never joined, even inside a list item.
 - **Task items are plain items.** `- [ ] task` draws as `•` followed by
   `[ ] task`.
+- **Diagrams need the label.** Claude has to write ```` ```diagram ````
+  for the mod to convert a block; an unlabelled fence stays ASCII. Ask for
+  it in your CLAUDE.md.
+- **A `-` or `+` touching a letter or digit is text.** `formal-letter`,
+  `x->y`, `--force` and `C++` stay as written, so a line drawn right up to
+  a word, as in `+--memo`, stays ASCII too. Leave a space between a line
+  and its label.
+- **A lone `|` is always a line.** Inside a diagram fence, `a | b` draws
+  as `a │ b`.
+- **Light lines only.** ASCII has one line style, so heavy, double and
+  dashed lines are never drawn; `=`, `.`, `'`, `/` and `\` stay as
+  written.
+- **The stored reply stays ASCII.** Only the terminal shows Unicode; the
+  transcript, and anything copied from it elsewhere, keep the ASCII.
+- **Diagram fences inside an ordered item stay ASCII.** As with bullets,
+  a fence indented under a `1.` item is left to the built-in renderer.
+- **Box glyphs can be wide.** In a CJK locale, or a terminal that draws
+  East Asian Ambiguous characters two columns wide, the converted lines
+  misalign; run `/reply-style diagrams off`.
 
 The code is in [`hooks/register.tsx`](hooks/register.tsx),
-[`hooks/segment.ts`](hooks/segment.ts), [`hooks/table.ts`](hooks/table.ts)
-and [`hooks/command.ts`](hooks/command.ts).
+[`hooks/segment.ts`](hooks/segment.ts), [`hooks/table.ts`](hooks/table.ts),
+[`hooks/diagram.ts`](hooks/diagram.ts) and
+[`hooks/command.ts`](hooks/command.ts).

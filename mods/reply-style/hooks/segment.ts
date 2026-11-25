@@ -14,6 +14,9 @@ export type Segment =
   | { kind: 'markdown'; text: string; blankBefore: boolean }
   // A fenced code block, fences included; the engine draws it, full width.
   | { kind: 'code'; text: string; blankBefore: boolean }
+  // A fence labelled `diagram`: its body, fences dropped, to redraw in
+  // Unicode.
+  | { kind: 'diagram'; body: string; blankBefore: boolean }
   | { kind: 'table'; table: Table; blankBefore: boolean }
   | { kind: 'list'; items: Item[]; blankBefore: boolean }
   | { kind: 'heading'; level: number; text: string; blankBefore: boolean }
@@ -21,12 +24,21 @@ export type Segment =
 
 // `width`: a quote or a soft line break is a reason to draw a reply, so its
 // prose gets the cap and wraps once; the engine draws the quote itself.
-export type Parts = { tables: boolean; bullets: boolean; headings: boolean; rules: boolean; width?: boolean }
+export type Parts = {
+  tables: boolean
+  bullets: boolean
+  headings: boolean
+  rules: boolean
+  width?: boolean
+  diagrams?: boolean
+}
 
 // A table's delimiter row: one dash or more per cell, as GFM allows, so
 // `| :- | :- |` counts as well as `| --- | --- |`.
 const SEPARATOR = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/
 const FENCE = /^\s*(```|~~~)/
+// The opening fence of a diagram: ```diagram, or ~~~diagram.
+const DIAGRAM = /^ {0,3}(```|~~~)[`~]*[ \t]*diagram[ \t]*$/
 const BULLET = /^( *)([-*+])( +)(.*)$/
 const ORDERED = /^( *)(\d{1,9}[.)])( +)/
 const RULE = /^ {0,3}([-*_])( *\1){2,} *$/
@@ -171,7 +183,13 @@ export const segment = (text: string, parts: Parts): Segment[] => {
       }
       // An unclosed fence runs to the end; its trailing blank lines go.
       while (code.length > 1 && isBlank(code[code.length - 1] ?? '')) code.pop()
-      out.push({ kind: 'code', text: code.join('\n'), blankBefore: gap })
+      if (parts.diagrams && DIAGRAM.test(line)) {
+        const closed = code.length > 1 && FENCE.test(code[code.length - 1] ?? '')
+        const body = code.slice(1, closed ? -1 : undefined).join('\n')
+        out.push({ kind: 'diagram', body, blankBefore: gap })
+      } else {
+        out.push({ kind: 'code', text: code.join('\n'), blankBefore: gap })
+      }
       gap = false
       i = j - 1
       continue
@@ -298,6 +316,7 @@ export const mayHold = (text: string, parts: Parts) =>
   (parts.bullets && /^ {0,3}[-*+] /m.test(text)) ||
   (parts.headings && /^ {0,3}#{1,6}([ \t]|$)/m.test(text)) ||
   (parts.rules && /^ {0,3}([-*_])( *\1){2,} *$/m.test(text)) ||
+  (parts.diagrams === true && /^\s*(```|~~~)[`~]*[ \t]*diagram[ \t]*$/m.test(text)) ||
   (parts.width === true && (QUOTE.test(text) || /\S[ \t]*\n[ \t]*\S/.test(text)))
 
 // Whether the parts are worth drawing: a part the mod draws, or, with

@@ -216,3 +216,13 @@ test('with width off, prose is as wide as the available width', async $ => {
   expect((await ui.find({ type: 'Box', key: 'p1' }))?.props.width).toBe(117)
   await ui.unmount()
 })
+
+test('a diagram fence is redrawn in Unicode as a text code block', async $ => {
+  const ui = await $.ui.mount(MSG('Flow:\n\n```diagram\n+---+\n| a | --> b\n+---+\n```'))
+
+  const blocks = await ui.findAll({ type: 'Markdown' })
+  const md = blocks.find(b => String(b.props.text).startsWith('```text'))
+  expect(md?.props.text).toBe('```text\n┌───┐\n│ a │ ──▶ b\n└───┘\n```')
+  await ui.unmount()
+})
+

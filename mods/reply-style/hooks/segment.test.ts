@@ -1,9 +1,10 @@
 import { expect, test } from 'claude-code/testing'
 
 import { holdsTable, mayHold, segment, unwrap, worthDrawing } from './segment'
+import type { Parts } from './segment'
 
 const ALL = { tables: true, bullets: true, headings: true, rules: true }
-const ONLY = (on: Partial<typeof ALL>) => ({ tables: false, bullets: false, headings: false, rules: false, ...on })
+const ONLY = (on: Partial<Parts>) => ({ tables: false, bullets: false, headings: false, rules: false, ...on })
 const kinds = (text: string, parts = ALL) => segment(text, parts).map(s => s.kind)
 const bodies = (text: string) => {
   const list = segment(text, ALL).find(s => s.kind === 'list')
@@ -191,3 +192,16 @@ test('a delimiter row must match the header in cells, and hold dashes', () => {
   expect(kinds('| A |\n-\nText')).toEqual(['markdown'])
   expect(kinds('| A | B |\n| : | : |\n| 1 | 2 |')).toEqual(['markdown'])
 })
+
+test('a fence labelled diagram is its own part, body without fences', () => {
+  const on = { ...ALL, diagrams: true }
+  const parts = segment('Intro.\n\n```diagram\na --> b\n```\n\nOutro.', on)
+  expect(parts.map(p => p.kind)).toEqual(['markdown', 'diagram', 'markdown'])
+  expect(parts[1]?.kind === 'diagram' && parts[1].body).toBe('a --> b')
+  expect(segment('~~~diagram\na --> b', on)[0]).toEqual({ kind: 'diagram', body: 'a --> b', blankBefore: false })
+  expect(kinds('```text\na --> b\n```')).toEqual(['code'])
+  expect(kinds('```diagram\na --> b\n```')).toEqual(['code'])
+  expect(mayHold('```diagram\na\n```', ONLY({ diagrams: true }))).toBe(true)
+  expect(mayHold('```text\na\n```', ONLY({ diagrams: true }))).toBe(false)
+})
+
