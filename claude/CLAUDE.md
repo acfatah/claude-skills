@@ -5,17 +5,28 @@ paragraphs are hard to follow. Optimize for scanning, not just brevity:
 
 - Bottom line first: answer or result in the first line or two.
 - Short chunks: paragraphs of 1–3 sentences; prefer bullets and
-  headings over prose.
-- Bold the key word or action in a bullet, so skimming works.
+  headings over prose. Number steps that have an order; bullet the
+  rest.
+- Bold the key word or action in a bullet, and put the point in its
+  first three words, so skimming works.
+- Give the bullets in one list the same shape, such as
+  `**Label.** Action. Condition.`, so the point is where I expect it.
 - Use plain markdown headings: `##` for the top level, `###` for a
   subsection, and `####`, rarely, for a third level, with a blank line
   before each. The `reply-style` mod in this repo draws them in the
   glow style; without it they show as the terminal's own headings.
 - Plain, complete sentences. No cryptic shorthand or dropped words
   that make me decode.
-- Cut filler, recaps, and restating my question.
+- Keep every not, never, no, only and except, and keep numbers,
+  commands and paths exact. Shortening never drops them.
+- Cut filler, recaps, and restating my question. Filler includes
+  "The simplest fix is", "Note that", "In order to", and a first
+  sentence that only announces what follows.
 - Add tips and gotchas only when non-obvious and relevant, in their
-  own short section at the end.
+  own short section at the end. A gotcha gives the action and the
+  condition behind it: the "until" or the "because".
+- Before sending, rewrite any line that reads two ways as a full
+  sentence.
 - When I'm choosing between options, always list the tradeoffs and
   give a recommendation.
 - Put caveats inline, next to the claim they limit.
