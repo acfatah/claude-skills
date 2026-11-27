@@ -103,7 +103,7 @@ when others can read it.
 ```json
 {
   "projects": {
-    "github.com/acfatah/skills": {
+    "github.com/acfatah/claude-skills": {
       "backend": "turso",
       "issues":   { "url": "libsql://…", "tokenEnv": "SKILLS_ISSUES_TOKEN" },
       "security": { "url": "libsql://…", "tokenEnv": "SKILLS_SECURITY_TOKEN" }
@@ -114,7 +114,7 @@ when others can read it.
 ```
 
 - **Project key:** the `origin` URL without scheme, user, or `.git`, such as
-  `github.com/acfatah/skills`. It is the same on every machine.
+  `github.com/acfatah/claude-skills`. It is the same on every machine.
 - **No origin remote:** `remote enable --slug <name>` records a slug for the
   checkout under `dirs`.
 - **Tokens:** `tokenEnv` names an environment variable; `token` holds the

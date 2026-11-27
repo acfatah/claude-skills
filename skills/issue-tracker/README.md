@@ -76,7 +76,7 @@ curl -fsSL https://bun.sh/install | bash
 Then install the skill:
 
 ```bash
-bunx skills add acfatah/skills -s issue-tracker -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s issue-tracker -a claude-code -g -y
 ```
 
 For local development, link the folder instead:

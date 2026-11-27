@@ -3299,7 +3299,7 @@ function promotionText(p) {
 }
 
 // src/cli.ts
-var VERSION = "2.3.0";
+var VERSION = "2.3.1";
 var str2 = (v, k) => v[k];
 var json = { json: { type: "boolean" } };
 async function readBody(v) {

@@ -2,7 +2,7 @@ import type { Config } from "./config.ts";
 import { git } from "./location.ts";
 
 // D6: a project is keyed by its origin URL, without scheme, user, port, or
-// .git, and with a lowercase host: github.com/acfatah/skills.
+// .git, and with a lowercase host: github.com/acfatah/claude-skills.
 export function normalizeRemote(url: string): string {
   let u = url.trim();
   const scp = /^(?:[^@/]+@)?([^:/]+):(?!\/)(.+)$/.exec(u);
