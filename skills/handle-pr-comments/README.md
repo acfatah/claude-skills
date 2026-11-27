@@ -64,7 +64,7 @@ request for `/code-review`.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s handle-pr-comments -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s handle-pr-comments -a claude-code -g -y
 ```
 
 For local development, link the folder instead:

@@ -43,13 +43,13 @@ to saved text.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s terse
+bunx skills add acfatah/claude-skills -s terse
 ```
 
 Or directly for a specific agent, globally:
 
 ```bash
-bunx skills add acfatah/skills -s terse -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s terse -a claude-code -g -y
 ```
 
 ## Usage

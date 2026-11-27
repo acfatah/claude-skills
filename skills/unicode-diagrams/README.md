@@ -58,7 +58,7 @@ uses Mermaid, not this skill, unless you ask for a text diagram.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s unicode-diagrams -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s unicode-diagrams -a claude-code -g -y
 ```
 
 For local development, link the folder instead:

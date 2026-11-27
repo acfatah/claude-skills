@@ -63,7 +63,7 @@ never writes.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s session-recap -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s session-recap -a claude-code -g -y
 ```
 
 For local development, link the folder instead:

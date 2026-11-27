@@ -47,7 +47,7 @@ it; it badges workflows that exist, it does not write them.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s readme-badges -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s readme-badges -a claude-code -g -y
 ```
 
 For local development, link the folder instead:
@@ -100,12 +100,12 @@ A block it writes looks like this:
   <a href="./LICENSE">
     <img
       alt="License"
-      src="https://img.shields.io/github/license/acfatah/skills?style=flat-square"
+      src="https://img.shields.io/github/license/acfatah/claude-skills?style=flat-square"
     ></a>
-  <a href="https://github.com/acfatah/skills/commits/main">
+  <a href="https://github.com/acfatah/claude-skills/commits/main">
     <img
       alt="Last commit"
-      src="https://img.shields.io/github/last-commit/acfatah/skills?display_timestamp=committer&style=flat-square"
+      src="https://img.shields.io/github/last-commit/acfatah/claude-skills?display_timestamp=committer&style=flat-square"
     ></a>
 </p>
 ```

@@ -64,7 +64,7 @@ skills repo does not use it; the skill stops in a skills repo.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s release -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s release -a claude-code -g -y
 ```
 
 For local development, link the folder instead:

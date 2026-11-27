@@ -53,7 +53,7 @@ whether a description matches a prompt.
 Requires [Bun](https://bun.sh); the skill stops without it.
 
 ```bash
-bunx skills add acfatah/skills -s lint-skills -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s lint-skills -a claude-code -g -y
 ```
 
 For local development, link the folder instead:
