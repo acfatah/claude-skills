@@ -139,6 +139,10 @@ skills/alpha/SKILL.md:8  [unknown-command]  /alpah is not a known skill or built
   backtick, and not when followed by `/`, `:` or `.` plus a letter. So
   `/mnt/c`, `/dev/null` and `/etc.d` never match, while "run /doctor."
   at the end of a sentence does.
+- **Not commands:** top-level Unix folders such as `/proc` and `/tmp`, and
+  GitHub URL segments such as `/stargazers` and `/issues`, never warn. A
+  name that is unknown as written but known without a `-style` or `-like`
+  suffix, as in `/recap-style`, never warns either.
 
 ## README sections (warnings)
 

@@ -4,7 +4,7 @@ description: Lint a skills repo with a bundled Bun script - skill names match th
 allowed-tools: Bash(bun ${CLAUDE_SKILL_DIR}/scripts/lint.ts *)
 ---
 
-# Lint Skills v1.1.0
+# Lint Skills v1.1.1
 
 Run the bundled linter on a skills repo, report what it finds, and offer
 fixes. The script does the checking; this file says when to run it and
