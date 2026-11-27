@@ -55,7 +55,7 @@ writes.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s roadmap-progress -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s roadmap-progress -a claude-code -g -y
 ```
 
 For local development, link the folder instead:

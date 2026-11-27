@@ -4,7 +4,7 @@ description: Issue tracking in a local SQLite database through a bundled Bun CLI
 allowed-tools: Bash(bun ${CLAUDE_SKILL_DIR}/scripts/issues.js *)
 ---
 
-# Issue Tracker v2.3.0
+# Issue Tracker v2.3.1
 
 Track issues while you work: every issue starts in a local database, and
 moves to GitHub only when it must be shared. Capture fast, triage later, and

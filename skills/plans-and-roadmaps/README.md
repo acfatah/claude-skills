@@ -91,7 +91,7 @@ is no plan to manage.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s plans-and-roadmaps -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s plans-and-roadmaps -a claude-code -g -y
 ```
 
 For local development, link the folder instead:

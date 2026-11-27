@@ -171,7 +171,7 @@ so a later Claude Code may change it.
 Clone the repo, then start Claude Code with the mod's folder:
 
 ```bash
-git clone https://github.com/acfatah/skills.git
+git clone https://github.com/acfatah/claude-skills.git
 claude --plugin-dir <clone>/mods/reply-style
 ```
 

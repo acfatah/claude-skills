@@ -22,10 +22,10 @@ function fake(): FakeHrana {
 
 describe("project key", () => {
   test.each([
-    ["git@github.com:acfatah/skills.git", "github.com/acfatah/skills"],
-    ["https://github.com/acfatah/skills", "github.com/acfatah/skills"],
-    ["https://GitHub.com/acfatah/skills.git/", "github.com/acfatah/skills"],
-    ["ssh://git@github.com:22/acfatah/skills.git", "github.com/acfatah/skills"],
+    ["git@github.com:acfatah/claude-skills.git", "github.com/acfatah/claude-skills"],
+    ["https://github.com/acfatah/claude-skills", "github.com/acfatah/claude-skills"],
+    ["https://GitHub.com/acfatah/claude-skills.git/", "github.com/acfatah/claude-skills"],
+    ["ssh://git@github.com:22/acfatah/claude-skills.git", "github.com/acfatah/claude-skills"],
     ["https://user:pw@gitlab.example.com/Group/Sub/repo.git", "gitlab.example.com/Group/Sub/repo"],
     ["github.com:a/b", "github.com/a/b"],
   ])("%s → %s", (url, key) => {

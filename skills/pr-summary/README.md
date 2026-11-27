@@ -53,7 +53,7 @@ its "Opening a PR on request" section.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s pr-summary -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s pr-summary -a claude-code -g -y
 ```
 
 For local development, link the folder instead:

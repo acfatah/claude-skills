@@ -70,7 +70,7 @@ Download only this one script; you do not need to clone the repo:
 
 ```bash
 mkdir -p ~/.claude/workflows
-curl -fsSL https://raw.githubusercontent.com/acfatah/skills/main/workflows/webapp-security-audit/webapp-security-audit.js -o ~/.claude/workflows/webapp-security-audit.js
+curl -fsSL https://raw.githubusercontent.com/acfatah/claude-skills/main/workflows/webapp-security-audit/webapp-security-audit.js -o ~/.claude/workflows/webapp-security-audit.js
 ```
 
 - **Verify:** start a new Claude Code session and ask it to run the

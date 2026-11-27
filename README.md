@@ -1,15 +1,15 @@
-# Skills
+# Claude Skills
 
 <p>
   <a href="./LICENSE">
     <img
       alt="License"
-      src="https://img.shields.io/github/license/acfatah/skills?style=flat-square"
+      src="https://img.shields.io/github/license/acfatah/claude-skills?style=flat-square"
     ></a>
-  <a href="https://github.com/acfatah/skills/commits/main">
+  <a href="https://github.com/acfatah/claude-skills/commits/main">
     <img
       alt="Last commit"
-      src="https://img.shields.io/github/last-commit/acfatah/skills?display_timestamp=committer&style=flat-square"
+      src="https://img.shields.io/github/last-commit/acfatah/claude-skills?display_timestamp=committer&style=flat-square"
     ></a>
 </p>
 
@@ -117,19 +117,19 @@ Other software, by skill:
 Pick interactively from the skills in this repository:
 
 ```bash
-bunx skills add acfatah/skills
+bunx skills add acfatah/claude-skills
 ```
 
 Or install one directly, globally, for a specific agent:
 
 ```bash
-bunx skills add acfatah/skills -s windows-screenshots -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s windows-screenshots -a claude-code -g -y
 ```
 
 List what is available without installing:
 
 ```bash
-bunx skills add acfatah/skills --list
+bunx skills add acfatah/claude-skills --list
 ```
 
 Update installed skills:

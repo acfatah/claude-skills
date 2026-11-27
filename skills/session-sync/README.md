@@ -70,7 +70,7 @@ no break, nothing another session could have changed.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s session-sync -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s session-sync -a claude-code -g -y
 ```
 
 For local development, link the folder instead:

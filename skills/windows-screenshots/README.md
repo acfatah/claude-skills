@@ -42,13 +42,13 @@ reads captures you already took, it does not take new ones.
 ## Install
 
 ```bash
-bunx skills add acfatah/skills -s windows-screenshots
+bunx skills add acfatah/claude-skills -s windows-screenshots
 ```
 
 Or directly for a specific agent, globally:
 
 ```bash
-bunx skills add acfatah/skills -s windows-screenshots -a claude-code -g -y
+bunx skills add acfatah/claude-skills -s windows-screenshots -a claude-code -g -y
 ```
 
 ## Configuration
