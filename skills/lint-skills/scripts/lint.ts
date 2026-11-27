@@ -44,8 +44,9 @@ export const BUILT_INS = [
   "branch", "claude-api", "clear", "code-review", "compact", "config",
   "context", "cost", "debug", "doctor", "exit", "fast", "fork", "help",
   "hooks", "init", "login", "logout", "loop", "mcp", "memory", "model",
-  "permissions", "plugin", "resume", "review", "schedule", "security-review",
-  "simplify", "skill-doctor", "skills", "status", "workflows",
+  "permissions", "plugin", "recap", "resume", "review", "schedule",
+  "security-review", "simplify", "skill-doctor", "skills", "status",
+  "workflows",
 ];
 
 // Third-party skills this repo refers to but does not ship.
@@ -56,6 +57,17 @@ const NOT_NAMES = new Set([
   "built-in", "third-party", "opt-in", "read-only", "one-off", "multi-agent",
   "per-skill", "per-project",
 ]);
+
+// Bare /names that are paths, not commands: top-level Unix folders, such as
+// `/proc`, and GitHub URL path segments, such as `/stargazers`.
+const NOT_COMMANDS = new Set([
+  "bin", "boot", "dev", "etc", "home", "lib", "mnt", "opt", "proc", "root",
+  "run", "sbin", "srv", "sys", "tmp", "usr", "var",
+  "stargazers", "issues", "pulls", "releases", "actions", "commits", "tags",
+]);
+
+// Suffixes that turn a command into an adjective, as in "/recap-style".
+const ADJECTIVE_RE = /-(?:style|like)$/;
 
 const NAME_RE = /^[a-z0-9][a-z0-9-]*$/;
 const VERSION_RE = /\sv\d+\.\d+\.\d+\s*$/;
@@ -381,7 +393,8 @@ export function checkReferences(repo: Repo, known: Set<string>): Finding[] {
     // /name at a line start or after a space, ( or backtick; not a path.
     lines.forEach((line, i) => {
       for (const m of line.matchAll(/(?:^|[\s(`])\/([a-z][a-z0-9-]*)(?![a-z0-9_/:-]|\.\w)/g)) {
-        if (commands.has(m[1])) continue;
+        const ok = (n: string) => commands.has(n) || NOT_COMMANDS.has(n);
+        if (ok(m[1]) || ok(m[1].replace(ADJECTIVE_RE, ""))) continue;
         out.push(warn(file, i + 1, "unknown-command", `/${m[1]} is not a known skill or built-in command`));
       }
     });

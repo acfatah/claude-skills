@@ -274,6 +274,24 @@ describe("reference checks", () => {
     expect(codes(r.stdout)).toEqual(["unknown-command"]);
   });
 
+  test("unknown-command skips system folders, URL segments and -style forms", () => {
+    const root = cleanRepo();
+    const body = [
+      "It reads `/proc` and /tmp; link to `/stargazers` or /issues.",
+      "A `/recap`-style line, a /doctor-like check, and /recap-style.",
+      "A command that ends in -style, /tone-style, is checked whole first.",
+      "But /zzz-style and /proc-nope still warn.",
+    ].join("\n");
+    addSkill(root, "alpha", { body });
+    addSkill(root, "tone-style");
+    const r = lint(root);
+    const lines = r.stdout.split("\n").filter((l) => l.includes("[unknown-command]"));
+    expect(lines.map((l) => l.split("  ")[2])).toEqual([
+      "/zzz-style is not a known skill or built-in command",
+      "/proc-nope is not a known skill or built-in command",
+    ]);
+  });
+
   test("never matched: fences, placeholders, plugin forms, paths, inline-code links", () => {
     const root = cleanRepo();
     const body = [
